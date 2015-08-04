@@ -28,7 +28,8 @@ defmodule Rollbax do
     end
   end
 
-  def report(exception, stacktrace, meta \\ %{}) do
+  def report(exception, stacktrace, meta \\ %{})
+  when is_list(stacktrace) and is_map(meta) do
     message = Exception.format(:error, exception, stacktrace)
     Rollbax.Client.emit(:error, message, meta)
   end
