@@ -1,4 +1,4 @@
-# Rollbax
+# Rollbax [![Build Status](https://travis-ci.org/elixir-addicts/rollbax.svg?branch=master "Build Status")](https://travis-ci.org/elixir-addicts/rollbax)
 
 This is an Elixir client for the Rollbar service.
 
