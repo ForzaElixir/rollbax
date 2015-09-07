@@ -14,13 +14,15 @@ defmodule Rollbax.ClientTest do
   end
 
   test "post payload" do
-    :ok = Client.emit(:error, "pass", %{meta: "OK"})
+    :ok = Client.emit(:error, "pass", %{meta: "OK", person: %{id: 123}})
     assert_receive {:api_request, body}
-    assert body =~ "access_token\":\"token1"
-    assert body =~ "environment\":\"test"
-    assert body =~ "level\":\"error"
-    assert body =~ "body\":\"pass"
-    assert body =~ "meta\":\"OK"
+    decoded_body = Poison.decode!(body)
+    assert decoded_body["access_token"] == "token1"
+    assert decoded_body["data"]["environment"] == "test"
+    assert decoded_body["data"]["level"] == "error"
+    assert decoded_body["data"]["body"] == %{"message" => %{"body" => "pass"}}
+    assert decoded_body["data"]["meta"] == "OK"
+    assert decoded_body["data"]["person"] == %{"id" => 123}
   end
 
   test "mass sending" do

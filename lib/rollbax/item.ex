@@ -27,7 +27,7 @@ defmodule Rollbax.Item do
     if map_size(meta) == 0 do
       data
     else
-      Map.put(data, "custom", meta)
+      Map.merge(data, meta)
     end
   end
 end
