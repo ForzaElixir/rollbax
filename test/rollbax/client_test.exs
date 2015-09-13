@@ -14,11 +14,11 @@ defmodule Rollbax.ClientTest do
   end
 
   test "post payload" do
-    :ok = Client.emit(:error, "pass", %{meta: "OK"})
+    :ok = Client.emit(:warn, "pass", %{meta: "OK"})
     assert_receive {:api_request, body}
     assert body =~ "access_token\":\"token1"
     assert body =~ "environment\":\"test"
-    assert body =~ "level\":\"error"
+    assert body =~ "level\":\"warn"
     assert body =~ "body\":\"pass"
     assert body =~ "meta\":\"OK"
   end

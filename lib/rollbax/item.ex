@@ -1,6 +1,6 @@
 defmodule Rollbax.Item do
   def draft(token, envt) do
-    {:ok, host} = :inet.gethostname()
+    {:ok, host} = :inet.gethostname
     %{"access_token" => token,
       "data" => %{
         "server" => %{
@@ -11,12 +11,15 @@ defmodule Rollbax.Item do
   end
 
   def compose(draft, {level, msg, time, meta}) do
-    Map.update! draft, "data", fn(data) ->
-      put_body(data, msg)
+    {occurr_data, meta} =
+      Map.pop(meta, :rollbax_occurr_data, %{})
+    Map.update!(draft, "data", fn(data) ->
+      Map.merge(occurr_data, data)
+      |> put_body(msg)
       |> put_custom(meta)
       |> Map.put("level", level)
       |> Map.put("timestamp", time)
-    end
+    end)
   end
 
   defp put_body(data, msg) do
