@@ -12,7 +12,7 @@ def application() do
 end
 
 defp deps() do
-  [{:rollbax, "~> 0.0.1"}]
+  [{:rollbax, "~> 0.5"}]
 end
 ```
 
