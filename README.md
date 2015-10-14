@@ -49,7 +49,7 @@ which could be configured as follows:
 config :logger,
   backends: [Rollbax.Notifier]
 
-config :logger, Rollbax.Notifier
+config :logger, Rollbax.Notifier,
   level: :error
 ```
 
