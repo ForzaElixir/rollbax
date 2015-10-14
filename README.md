@@ -26,7 +26,7 @@ in your application environment, usually defined in your `config/config.exs`:
 ```elixir
 config :rollbax,
   access_token: "ffb8056a621f309eeb1ed87fa0c7",
-  environment: "production",
+  environment: "production"
 ```
 
 ## Usage
