@@ -4,10 +4,15 @@ defmodule Rollbax.Item do
     %{"access_token" => token,
       "data" => %{
         "server" => %{
-          "host" => List.to_string(host)},
+          "host" => List.to_string(host)
+        },
         "environment" => envt,
-        "language"  => "Elixir",
-        "framework" => "OTP"}}
+        "language" => language(),
+        "platform" => platform(),
+        "framework" => "OTP",
+        "notifier" => notifier()
+      }
+    }
   end
 
   def compose(draft, {level, msg, time, meta}) do
@@ -32,5 +37,22 @@ defmodule Rollbax.Item do
     else
       Map.put(data, "custom", meta)
     end
+  end
+
+  defp language() do
+    "Elixir v" <> System.version
+  end
+
+  defp platform() do
+    :erlang.system_info(:system_version)
+    |> List.to_string
+    |> String.strip
+  end
+
+  defp notifier() do
+    %{
+      "name" => "Rollbax",
+      "version" => unquote(Mix.Project.config[:version])
+    }
   end
 end
