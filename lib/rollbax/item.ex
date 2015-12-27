@@ -1,7 +1,8 @@
 defmodule Rollbax.Item do
   def draft(token, envt) do
     {:ok, host} = :inet.gethostname
-    %{"access_token" => token,
+    %{
+      "access_token" => token,
       "data" => %{
         "server" => %{
           "host" => List.to_string(host)
@@ -9,7 +10,6 @@ defmodule Rollbax.Item do
         "environment" => envt,
         "language" => language(),
         "platform" => platform(),
-        "framework" => "OTP",
         "notifier" => notifier()
       }
     }
