@@ -30,7 +30,7 @@ defmodule Rollbax.Mixfile do
   end
 
   defp package() do
-    [contributors: ["Aleksei Magusev"],
+    [maintainers: ["Aleksei Magusev"],
      licenses: ["ISC"],
      links: %{"GitHub" => "https://github.com/elixir-addicts/rollbax"}]
   end
