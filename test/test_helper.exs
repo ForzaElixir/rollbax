@@ -18,7 +18,7 @@ defmodule ExUnit.RollbaxCase do
   def capture_log(fun) do
     ExUnit.CaptureIO.capture_io(:user, fn ->
       fun.()
-      :timer.sleep(100)
+      :timer.sleep(200)
       Logger.flush()
     end)
   end
@@ -35,8 +35,9 @@ defmodule RollbarAPI do
   end
 
   def stop() do
-    :timer.sleep(80)
+    :timer.sleep(100)
     Cowboy.shutdown(__MODULE__.HTTP)
+    :timer.sleep(100)
   end
 
   def init(opts) do
