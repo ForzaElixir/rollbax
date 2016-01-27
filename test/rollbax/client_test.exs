@@ -4,13 +4,15 @@ defmodule Rollbax.ClientTest do
   alias Rollbax.Client
 
   setup_all do
-    {:ok, _} = start_rollbax_client("token1", "test")
-    :ok
+    {:ok, pid} = start_rollbax_client("token1", "test")
+    on_exit(fn ->
+      ensure_rollbax_client_down(pid)
+    end)
   end
 
   setup do
     {:ok, _} = RollbarAPI.start(self())
-    on_exit(fn -> RollbarAPI.stop() end)
+    on_exit(&RollbarAPI.stop/0)
   end
 
   test "post payload" do
@@ -34,7 +36,7 @@ defmodule Rollbax.ClientTest do
   end
 
   test "endpoint is down" do
-    :ok = RollbarAPI.stop()
+    :ok = RollbarAPI.stop
     log = capture_log(fn ->
       :ok = Client.emit(:error, "miss", %{})
     end)

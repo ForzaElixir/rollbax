@@ -11,8 +11,15 @@ defmodule ExUnit.RollbaxCase do
     end
   end
 
-  def start_rollbax_client(token, envt) do
-    Rollbax.Client.start_link(token, envt, true, "http://localhost:4004")
+  def start_rollbax_client(token, env) do
+    Rollbax.Client.start_link(token, env, true, "http://localhost:4004")
+  end
+
+  def ensure_rollbax_client_down(pid) do
+    ref = Process.monitor(pid)
+    receive do
+      {:DOWN, ^ref, _, _, _} -> :ok
+    end
   end
 
   def capture_log(fun) do
