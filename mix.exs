@@ -19,7 +19,7 @@ defmodule Rollbax.Mixfile do
 
   defp deps() do
     [{:hackney, "~> 1.1"},
-     {:poison,  "~> 1.4"},
+     {:poison,  "~> 1.4 or ~> 2.0"},
 
      {:plug,   "~> 0.13.0", only: :test},
      {:cowboy, "~> 1.0.0", only: :test}]
