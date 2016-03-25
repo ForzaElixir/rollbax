@@ -76,6 +76,11 @@ defmodule Rollbax.Client do
     {:noreply, state}
   end
 
+  def handle_info(message, state) do
+    Logger.info("(Rollbax) unexpected message: #{inspect(message)}")
+    {:noreply, state}
+  end
+
   defp unix_timestamp() do
     {mgsec, sec, _usec} = :os.timestamp()
     mgsec * 1_000_000 + sec
