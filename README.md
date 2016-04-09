@@ -65,6 +65,25 @@ Logger.metadata(rollbar: false)
 Logger.error("oops", rollbar: false)
 ```
 
+### Plug and Phoenix
+
+The [`Plug.ErrorHandler` plug](https://hexdocs.pm/plug/Plug.ErrorHandler.html) can be used to send
+error reports inside a web request.
+
+In your router:
+
+```elixir
+defmodule MyApp.Router do
+  use Plug.Router # Or `use MyApp.Web, :router` for Phoenix apps
+  use Plug.ErrorHandler
+
+  # Reports the exception and re-raises it
+  defp handle_errors(conn, %{kind: _kind, reason: reason, stack: stack}) do
+    Rollbax.report(reason, stack, %{params: conn.params})
+  end
+end
+```
+
 ### Non-production reporting
 
 For non-production environments error reporting
