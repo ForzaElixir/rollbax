@@ -2,5 +2,3 @@
 /deps
 erl_crash.dump
 *.ez
-.tags
-.tags_sorted_by_file
