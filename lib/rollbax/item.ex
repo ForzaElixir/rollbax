@@ -44,7 +44,6 @@ defmodule Rollbax.Item do
 
   # Required: frames
   # A list of stack frames, ordered such that the most recent call is last in the list.
-  # XXX Not sure about frame structure
   # TODO implement all options. See https://rollbar.com/docs/api/items_post/
   defp frames(stacktrace) do
     Enum.map(stacktrace, fn({_, _, _, file}) ->
