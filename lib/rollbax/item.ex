@@ -78,7 +78,7 @@ defmodule Rollbax.Item do
     %{
       # Required: class
       # The exception class name.
-      "class" => to_string(exception.__struct__),
+      "class" => inspect(exception.__struct__),
 
       # Optional: message
       # The exception message, as a string

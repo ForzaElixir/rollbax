@@ -24,7 +24,7 @@ defmodule Rollbax.ClientTest do
     assert r["data"]["server"]["host"] == to_string(host)
 
     trace = r["data"]["body"]["trace"]
-    assert trace["exception"]["class"] == "Elixir.RuntimeError"
+    assert trace["exception"]["class"] == "RuntimeError"
     assert trace["exception"]["message"] == @message
     assert length(trace["frames"]) == 2
     [frame | frames] = trace["frames"]
