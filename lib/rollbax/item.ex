@@ -15,12 +15,12 @@ defmodule Rollbax.Item do
     }
   end
 
-  def compose(draft, {level, e, stacktrace, time, meta}) do
+  def compose(draft, {level, exception, stacktrace, time, meta}) do
     {occurr_data, meta} =
       Map.pop(meta, "rollbax_occurr_data", %{})
     Map.update!(draft, "data", fn(data) ->
       Map.merge(occurr_data, data)
-      |> put_body(e, stacktrace)
+      |> put_body(exception, stacktrace)
       |> put_custom(meta)
       |> Map.put("level", level)
       |> Map.put("timestamp", time)
@@ -28,18 +28,18 @@ defmodule Rollbax.Item do
   end
 
   # If a message with no stack trace, use "message"
-  defp put_body(data, e, nil) do
-    Map.put(data, "body", %{ "message" => %{ "body" => Exception.format(:error, e, nil) } })
+  defp put_body(data, exception, nil) do
+    Map.put(data, "body", %{ "message" => %{ "body" => Exception.format(:error, exception, nil) } })
   end
 
   # If this payload is a single exception, use "trace"
   # stacktrace example: [{Test, :report, 2, [file: 'file.exs', line: 16]}]
-  defp put_body(data, e, stacktrace) do
-    Map.put(data, "body", %{ "trace" => trace(e, stacktrace) })
+  defp put_body(data, exception, stacktrace) do
+    Map.put(data, "body", %{ "trace" => trace(exception, stacktrace) })
   end
 
-  defp trace(e, stacktrace) do
-    %{ "frames" => frames(stacktrace), "exception" => exception(e) }
+  defp trace(exception, stacktrace) do
+    %{ "frames" => frames(stacktrace), "exception" => exception(exception) }
   end
 
   # Required: frames
@@ -62,15 +62,15 @@ defmodule Rollbax.Item do
   # Required: exception
   # An object describing the exception instance.
   # TODO description
-  defp exception(e) do
+  defp exception(exception) do
     %{
       # Required: class
       # The exception class name.
-      "class" => to_string(e.__struct__),
+      "class" => to_string(exception.__struct__),
 
       # Optional: message
       # The exception message, as a string
-      "message" => e.message
+      "message" => exception.message
     }
   end
 
