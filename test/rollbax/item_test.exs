@@ -4,7 +4,9 @@ defmodule Rollbax.ClientTest do
 
   @access_token "123"
   @message "test"
-  @stacktrace [{Test, :report, 2, [file: 'file.exs', line: 16]}]
+  @stacktrace [{Test, :report, 2, [file: 'file1.exs', line: 16]},
+               {Test, :report, 2, [file: 'file2.exs']},
+               {Test, :report, 2, [line: 16]}]
   @timestamp :os.timestamp()
 
   test "compose with stacktrace" do
@@ -24,9 +26,13 @@ defmodule Rollbax.ClientTest do
     trace = r["data"]["body"]["trace"]
     assert trace["exception"]["class"] == "Elixir.RuntimeError"
     assert trace["exception"]["message"] == @message
-    frame = hd(trace["frames"])
-    assert frame["filename"] == 'file.exs'
+    assert length(trace["frames"]) == 2
+    [frame | frames] = trace["frames"]
+    assert frame["filename"] == 'file1.exs'
     assert frame["lineno"] == 16
+    frame = hd(frames)
+    assert frame["filename"] == 'file2.exs'
+    assert !frame["loneno"]
     refute r["data"]["body"]["trace_chain"]
     refute r["data"]["body"]["message"]
     refute r["data"]["body"]["crash_report"]
