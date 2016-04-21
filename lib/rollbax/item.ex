@@ -46,17 +46,27 @@ defmodule Rollbax.Item do
   # A list of stack frames, ordered such that the most recent call is last in the list.
   # TODO implement all options. See https://rollbar.com/docs/api/items_post/
   defp frames(stacktrace) do
-    Enum.map(stacktrace, fn({_, _, _, file}) ->
-      %{
-        # Required: filename
-        # The filename including its full path
-        "filename" => file[:file],
+    Enum.map(stacktrace, fn({_, _, _, f}) -> frame(f[:file], f[:line]) end)
+  end
 
-        # Optional: lineno
-        # The line number as an integer
-        "lineno" => file[:line]
-      }
-    end)
+  defp frame(nil, _) do
+    nil
+  end
+
+  defp frame(file, nil) do
+    %{ "filename" => file }
+  end
+
+  defp frame(file, line) do
+    %{
+      # Required: filename
+      # The filename including its full path
+      "filename" => file,
+
+      # Optional: lineno
+      # The line number as an integer
+      "lineno" => line
+    }
   end
 
   # Required: exception
