@@ -17,7 +17,7 @@ defmodule Rollbax.Item do
 
   def compose(draft, {level, exception, stacktrace, time, meta}) do
     {occurr_data, meta} =
-      Map.pop(meta, "rollbax_occurr_data", %{})
+      Map.pop(meta, :rollbax_occurr_data, %{})
     Map.update!(draft, "data", fn(data) ->
       Map.merge(occurr_data, data)
       |> put_body(exception, stacktrace)
@@ -29,17 +29,17 @@ defmodule Rollbax.Item do
 
   # If a message with no stack trace, use "message"
   defp put_body(data, exception, nil) do
-    Map.put(data, "body", %{ "message" => %{ "body" => Exception.format(:error, exception, nil) } })
+    Map.put(data, "body", %{"message" => %{"body" => Exception.format(:error, exception, nil)}})
   end
 
   # If this payload is a single exception, use "trace"
   # stacktrace example: [{Test, :report, 2, [file: 'file.exs', line: 16]}]
   defp put_body(data, exception, stacktrace) do
-    Map.put(data, "body", %{ "trace" => trace(exception, stacktrace) })
+    Map.put(data, "body", %{"trace" => trace(exception, stacktrace)})
   end
 
   defp trace(exception, stacktrace) do
-    %{ "frames" => frames(stacktrace), "exception" => exception(exception) }
+    %{"frames" => frames(stacktrace), "exception" => exception(exception)}
   end
 
   # Required: frames
@@ -56,7 +56,7 @@ defmodule Rollbax.Item do
   end
 
   defp frame(file, nil) do
-    %{ "filename" => file }
+    %{"filename" => file}
   end
 
   defp frame(file, line) do
