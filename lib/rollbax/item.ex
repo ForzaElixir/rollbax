@@ -39,7 +39,7 @@ defmodule Rollbax.Item do
   end
 
   defp trace(exception, stacktrace) do
-    %{"frames" => frames(stacktrace), "exception" => exception(exception)}
+    %{"frames" => frames(stacktrace), "exception" => format_exception(exception)}
   end
 
   # Required: frames
@@ -74,7 +74,7 @@ defmodule Rollbax.Item do
   # Required: exception
   # An object describing the exception instance.
   # TODO description
-  defp exception(exception) do
+  defp format_exception(exception) do
     %{
       # Required: class
       # The exception class name.
