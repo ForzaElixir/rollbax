@@ -42,13 +42,17 @@ defmodule Rollbax.Client do
   def handle_cast({:emit, event}, %{enabled: :log} = state) do
     {level, exception, stacktrace, time, meta} = event
     Logger.info [
-      "(Rollbax) registered report:", ?\n, exception.message,
+      "(Rollbax) registered report:", ?\n, pretty_exception(exception),
       "\n    Level: ", level,
       "\nTimestamp: ", Integer.to_string(time),
       "\nMetadata: ", inspect(meta),
       "\nTrace: ", inspect(stacktrace)
     ]
     {:noreply, state}
+  end
+
+  defp pretty_exception(exception) do
+    Enum.join(["(", inspect(exception.__struct__), ") ", exception.message])
   end
 
   def handle_cast({:emit, event}, %{enabled: true} = state) do
