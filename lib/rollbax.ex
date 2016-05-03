@@ -28,10 +28,22 @@ defmodule Rollbax do
     end
   end
 
-  def report(exception, stacktrace, meta \\ %{} , occurr_data \\ %{})
-  when is_list(stacktrace) and is_map(meta) and is_map(occurr_data) do
-    message = Exception.format(:error, exception, stacktrace)
+  def report(kind, value, stacktrace, meta \\ %{}, occurr_data \\ %{})
+  when kind in [:error, :exit, :throw] and is_list(stacktrace) and is_map(meta) and is_map(occurr_data) do
+    # We need this manual check here otherwise Exception.format_banner(:error,
+    # term) will assume that term is an Erlang error (it will say
+    # "** # (ErlangError) ...").
+    if kind == :error and not Exception.exception?(value) do
+      raise ArgumentError, "expected an exception when the kind is :error, got: #{value}"
+    end
+
+    body = Rollbax.Item.exception_to_body(kind, value, stacktrace)
     meta = Map.put(meta, :rollbax_occurr_data, occurr_data)
-    Rollbax.Client.emit(:error, message, meta)
+    Rollbax.Client.emit(:error, unix_time(), body, meta)
+  end
+
+  defp unix_time() do
+    {mgsec, sec, _usec} = :os.timestamp()
+    mgsec * 1_000_000 + sec
   end
 end

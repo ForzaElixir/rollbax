@@ -30,8 +30,8 @@ defmodule Rollbax.Client do
     :ok = :hackney_pool.stop_pool(__MODULE__)
   end
 
-  def emit(lvl, msg, meta) when is_map(meta) do
-    event = {Atom.to_string(lvl), msg, unix_timestamp(), meta}
+  def emit(level, timestamp, body, meta) when is_map(meta) do
+    event = {Atom.to_string(level), timestamp, body, meta}
     GenServer.cast(__MODULE__, {:emit, event})
   end
 
@@ -40,11 +40,11 @@ defmodule Rollbax.Client do
   end
 
   def handle_cast({:emit, event}, %{enabled: :log} = state) do
-    {level, message, time, meta} = event
+    {level, timestamp, body, meta} = event
     Logger.info [
-      "(Rollbax) registered report:", ?\n, message,
+      "(Rollbax) registered report:", ?\n, inspect(body),
       "\n    Level: ", level,
-      "\nTimestamp: ", Integer.to_string(time),
+      "\nTimestamp: ", Integer.to_string(timestamp),
       "\n Metadata: " | inspect(meta)]
     {:noreply, state}
   end
@@ -79,11 +79,6 @@ defmodule Rollbax.Client do
   def handle_info(message, state) do
     Logger.info("(Rollbax) unexpected message: #{inspect(message)}")
     {:noreply, state}
-  end
-
-  defp unix_timestamp() do
-    {mgsec, sec, _usec} = :os.timestamp()
-    mgsec * 1_000_000 + sec
   end
 
   defp compose_json(draft, event) do
