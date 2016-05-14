@@ -31,14 +31,8 @@ defmodule Rollbax.Notifier do
 
   defp post_event(level, {Logger, msg, _ts, meta}, keys) do
     msg = IO.chardata_to_string(msg)
-    meta = take_into_map(meta, keys)
+    meta = Map.take(meta, keys)
     Rollbax.Client.emit(level, msg, meta)
-  end
-
-  defp take_into_map(metadata, keys) do
-    Enum.reduce metadata, %{}, fn({key, val}, acc) ->
-      if key in keys, do: Map.put(acc, key, val), else: acc
-    end
   end
 
   defp configure(opts) do
