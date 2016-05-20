@@ -1,8 +1,8 @@
-%{"cowboy": {:hex, :cowboy, "1.0.2"},
-  "cowlib": {:hex, :cowlib, "1.0.1"},
-  "hackney": {:hex, :hackney, "1.1.0"},
-  "idna": {:hex, :idna, "1.0.2"},
-  "plug": {:hex, :plug, "0.13.0"},
-  "poison": {:hex, :poison, "2.1.0"},
-  "ranch": {:hex, :ranch, "1.1.0"},
-  "ssl_verify_hostname": {:hex, :ssl_verify_hostname, "1.0.4"}}
+%{"cowboy": {:hex, :cowboy, "1.0.2", "876a2f63eaa5da5bd0610569d6402cabef8b3f48171233c11cfeee9f37d1f0c9", [:rebar], [{:cowlib, "~> 1.0.0", [hex: :cowlib, optional: false]}, {:ranch, "~> 1.0", [hex: :ranch, optional: false]}]},
+  "cowlib": {:hex, :cowlib, "1.0.1", "175a633c472058bbeb1b238a6409766a48b52b43b7b687ed70f03cf6e854b7d9", [:make], []},
+  "hackney": {:hex, :hackney, "1.1.0", "e999ef5fbd9d199b00953b26cbcb4396402e8e4fca6d2c48501253d98bd63723", [:make, :rebar], [{:ssl_verify_hostname, "~> 1.0", [hex: :ssl_verify_hostname, optional: false]}, {:idna, "~> 1.0", [hex: :idna, optional: false]}]},
+  "idna": {:hex, :idna, "1.0.2", "397e3d001c002319da75759b0a81156bf11849c71d565162436d50020cb7265e", [:make], []},
+  "plug": {:hex, :plug, "0.13.0", "2fed890715c53a2e47a8c410fac5b198770aa7abe996cf85cd496c3492dc4bc8", [:mix], [{:cowboy, "~> 1.0", [hex: :cowboy, optional: true]}]},
+  "poison": {:hex, :poison, "2.1.0", "f583218ced822675e484648fa26c933d621373f01c6c76bd00005d7bd4b82e27", [:mix], []},
+  "ranch": {:hex, :ranch, "1.1.0", "f7ed6d97db8c2a27cca85cacbd543558001fc5a355e93a7bff1e9a9065a8545b", [:make], []},
+  "ssl_verify_hostname": {:hex, :ssl_verify_hostname, "1.0.4", "f357b4dd338c062988d4f2aa5e983adafd555c5c74dcf259d221572327dd8086", [:make], []}}
