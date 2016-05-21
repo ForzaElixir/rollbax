@@ -30,8 +30,8 @@ defmodule Rollbax.Client do
     :ok = :hackney_pool.stop_pool(__MODULE__)
   end
 
-  def emit(lvl, msg, meta) when is_map(meta) do
-    event = {Atom.to_string(lvl), msg, unix_timestamp(), meta}
+  def emit(lvl, exception, stacktrace, meta) when is_map(meta) do
+    event = {Atom.to_string(lvl), exception, stacktrace, unix_timestamp(), meta}
     GenServer.cast(__MODULE__, {:emit, event})
   end
 
@@ -40,13 +40,19 @@ defmodule Rollbax.Client do
   end
 
   def handle_cast({:emit, event}, %{enabled: :log} = state) do
-    {level, message, time, meta} = event
+    {level, exception, stacktrace, time, meta} = event
     Logger.info [
-      "(Rollbax) registered report:", ?\n, message,
+      "(Rollbax) registered report:", ?\n, pretty_exception(exception),
       "\n    Level: ", level,
       "\nTimestamp: ", Integer.to_string(time),
-      "\n Metadata: " | inspect(meta)]
+      "\nMetadata: ", inspect(meta),
+      "\nTrace: ", inspect(stacktrace)
+    ]
     {:noreply, state}
+  end
+
+  defp pretty_exception(exception) do
+    Enum.join(["(", inspect(exception.__struct__), ") ", exception.message])
   end
 
   def handle_cast({:emit, event}, %{enabled: true} = state) do
