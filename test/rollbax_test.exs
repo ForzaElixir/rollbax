@@ -16,10 +16,14 @@ defmodule RollbaxTest do
   test "exception report" do
     stacktrace = [{Test, :report, 2, [file: 'file.exs', line: 16]}]
     exception = RuntimeError.exception("pass")
-    :ok = Rollbax.report(exception, stacktrace, %{}, %{uuid: "d4c7"})
+    :ok = Rollbax.report(:error, exception, stacktrace, %{}, %{uuid: "d4c7"})
     assert_receive {:api_request, body}
     assert body =~ "level\":\"error"
-    assert body =~ "body\":\"** (RuntimeError) pass\\n    file.exs:16: Test.report/2\\n"
+    assert body =~ "class\":\"RuntimeError\""
+    assert body =~ "message\":\"pass\""
+    assert body =~ "filename\":\"file.exs\""
+    assert body =~ "lineno\":16"
+    assert body =~ "method\":\"Test.report/2\""
     assert body =~ "uuid\":\"d4c7"
     refute body =~ "custom"
   end
