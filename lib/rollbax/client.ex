@@ -8,17 +8,28 @@ defmodule Rollbax.Client do
   @api_url "https://api.rollbar.com/api/1/item/"
   @headers [{"content-type", "application/json"}]
 
+  ## GenServer state
+
   defstruct [:draft, :url, :enabled]
 
-  def start_link(token, envt, enabled, url \\ @api_url) do
-    state = new(token, envt, url, enabled)
+  ## Public API
+
+  def start_link(token, environment, enabled, url \\ @api_url) do
+    state = new(token, environment, url, enabled)
     GenServer.start_link(__MODULE__, state, [name: __MODULE__])
   end
 
-  def new(token, envt, url, enabled) do
-    draft = Item.draft(token, envt)
+  def new(token, environment, url, enabled) do
+    draft = Item.draft(token, environment)
     %__MODULE__{draft: draft, url: url, enabled: enabled}
   end
+
+  def emit(level, timestamp, body, meta) when is_map(meta) do
+    event = {Atom.to_string(level), timestamp, body, meta}
+    GenServer.cast(__MODULE__, {:emit, event})
+  end
+
+  ## GenServer callbacks
 
   def init(state) do
     Logger.metadata(rollbax: false)
@@ -28,11 +39,6 @@ defmodule Rollbax.Client do
 
   def terminate(_reason, _state) do
     :ok = :hackney_pool.stop_pool(__MODULE__)
-  end
-
-  def emit(level, timestamp, body, meta) when is_map(meta) do
-    event = {Atom.to_string(level), timestamp, body, meta}
-    GenServer.cast(__MODULE__, {:emit, event})
   end
 
   def handle_cast({:emit, _event}, %{enabled: false} = state) do
@@ -80,6 +86,8 @@ defmodule Rollbax.Client do
     Logger.info("(Rollbax) unexpected message: #{inspect(message)}")
     {:noreply, state}
   end
+
+  ## Helper functions
 
   defp compose_json(draft, event) do
     Item.compose(draft, event)
