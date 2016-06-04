@@ -24,8 +24,8 @@ defmodule Rollbax.Client do
     %__MODULE__{draft: draft, url: url, enabled: enabled}
   end
 
-  def emit(level, timestamp, body, meta) when is_map(meta) do
-    event = {Atom.to_string(level), timestamp, body, meta}
+  def emit(level, timestamp, body, custom, occurrence_data) do
+    event = {Atom.to_string(level), timestamp, body, custom, occurrence_data}
     GenServer.cast(__MODULE__, {:emit, event})
   end
 
@@ -46,12 +46,14 @@ defmodule Rollbax.Client do
   end
 
   def handle_cast({:emit, event}, %{enabled: :log} = state) do
-    {level, timestamp, body, meta} = event
+    {level, timestamp, body, custom, occurrence_data} = event
     Logger.info [
       "(Rollbax) registered report:", ?\n, inspect(body),
-      "\n    Level: ", level,
-      "\nTimestamp: ", Integer.to_string(timestamp),
-      "\n Metadata: " | inspect(meta)]
+      "\n          Level: ", level,
+      "\n      Timestamp: ", Integer.to_string(timestamp),
+      "\n    Custom data: ", inspect(custom),
+      "\nOccurrence data: ", inspect(occurrence_data),
+    ]
     {:noreply, state}
   end
 
