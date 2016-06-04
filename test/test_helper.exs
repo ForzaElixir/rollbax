@@ -55,7 +55,7 @@ defmodule RollbarAPI do
     {:ok, body, conn} = read_body(conn)
     :timer.sleep(30)
     send test, {:api_request, body}
-    send_resp(conn, 200, "OK")
+    send_resp(conn, 200, "{}")
   end
 
   def call(conn, _test) do

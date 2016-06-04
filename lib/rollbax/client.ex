@@ -84,6 +84,8 @@ defmodule Rollbax.Client do
     case response do
       {:status, code, desc} when code != 200 ->
         Logger.warn("(Rollbax) unexpected API status: #{code}/#{desc}")
+      body when is_binary(body) ->
+        log_body(body)
       {:error, reason} ->
         Logger.error("(Rollbax) connection error: #{inspect(reason)}")
       _otherwise ->
@@ -102,5 +104,16 @@ defmodule Rollbax.Client do
   defp compose_json(draft, event) do
     Item.compose(draft, event)
     |> Poison.encode!(iodata: true)
+  end
+
+  defp log_body(body) do
+    case Poison.decode(body) do
+      {:ok, %{"err" => 1, "message" => message}} when is_binary(message) ->
+        Logger.error("(Rollbax) API returned an error: #{inspect message}")
+      {:ok, response} ->
+        Logger.debug("(Rollbax) API response: #{inspect response}")
+      {:error, _} ->
+        Logger.error("(Rollbax) API returned malformed JSON: #{inspect body}")
+    end
   end
 end
