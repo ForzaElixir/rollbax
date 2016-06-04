@@ -15,13 +15,12 @@ defmodule Rollbax.Item do
     }
   end
 
-  def compose(draft, {level, timestamp, body, meta}) do
-    {occurr_data, meta} =
-      Map.pop(meta, :rollbax_occurr_data, %{})
+  def compose(draft, {level, timestamp, body, custom, occurrence_data}) do
     Map.update!(draft, "data", fn(data) ->
-      Map.merge(occurr_data, data)
+      occurrence_data
+      |> Map.merge(data)
       |> Map.put("body", body)
-      |> put_custom(meta)
+      |> put_custom(custom)
       |> Map.put("level", level)
       |> Map.put("timestamp", timestamp)
     end)

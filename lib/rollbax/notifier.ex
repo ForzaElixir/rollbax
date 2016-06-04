@@ -31,10 +31,11 @@ defmodule Rollbax.Notifier do
     Logger.compare_levels(lvl, min) != :lt
   end
 
-  defp post_event(level, {Logger, msg, event_time, meta}, keys) do
-    msg = IO.chardata_to_string(msg)
-    meta = Map.take(meta, keys)
-    Rollbax.Client.emit(level, event_time_to_unix(event_time), Rollbax.Item.message_to_body(msg), meta)
+  defp post_event(level, {Logger, message, event_time, meta}, keys) do
+    event_unix_time = event_time_to_unix(event_time)
+    body = Rollbax.Item.message_to_body(IO.chardata_to_string(message))
+    custom = Map.take(meta, keys)
+    Rollbax.Client.emit(level, event_unix_time, body, custom, %{})
   end
 
   defp configure(opts) do

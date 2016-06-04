@@ -16,18 +16,18 @@ defmodule Rollbax.ClientTest do
   end
 
   test "post payload" do
-    :ok = Client.emit(:warn, unix_time(), %{"message" => %{"body" => "pass"}}, %{meta: "OK"})
+    :ok = Client.emit(:warn, unix_time(), %{"message" => %{"body" => "pass"}}, _custom = %{foo: "bar"}, %{})
     assert_receive {:api_request, body}
     assert body =~ "access_token\":\"token1"
     assert body =~ "environment\":\"test"
     assert body =~ "level\":\"warn"
     assert body =~ "body\":\"pass"
-    assert body =~ "meta\":\"OK"
+    assert body =~ "foo\":\"bar"
   end
 
   test "mass sending" do
     for _ <- 1..60 do
-      :ok = Client.emit(:error, unix_time(), %{"message" => %{"body" => "pass"}}, %{})
+      :ok = Client.emit(:error, unix_time(), %{"message" => %{"body" => "pass"}}, %{}, %{})
     end
 
     for _ <- 1..60 do
@@ -38,7 +38,7 @@ defmodule Rollbax.ClientTest do
   test "endpoint is down" do
     :ok = RollbarAPI.stop
     log = capture_log(fn ->
-      :ok = Client.emit(:error, unix_time(), %{"message" => %{"body" => "miss"}}, %{})
+      :ok = Client.emit(:error, unix_time(), %{"message" => %{"body" => "miss"}}, %{}, %{})
     end)
     assert log =~ "[error] (Rollbax) connection error:"
     refute_receive {:api_request, _body}
