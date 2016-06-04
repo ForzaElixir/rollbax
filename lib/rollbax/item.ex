@@ -1,4 +1,10 @@
 defmodule Rollbax.Item do
+  @moduledoc false
+
+  # This module is responsible for building the payload for a Rollbar "Item".
+  # Refer to https://rollbar.com/docs/api/items_post for documentation on such
+  # payload.
+
   def draft(token, envt) do
     {:ok, host} = :inet.gethostname
     %{

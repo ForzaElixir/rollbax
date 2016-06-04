@@ -1,4 +1,8 @@
 defmodule Rollbax.Notifier do
+  @moduledoc false
+
+  # Logger backend that reports messages to Rollbar.
+
   use GenEvent
 
   @unix_epoch :calendar.datetime_to_gregorian_seconds({{1970, 1, 1}, {0, 0, 0}})

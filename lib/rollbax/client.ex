@@ -1,4 +1,12 @@
 defmodule Rollbax.Client do
+  @moduledoc false
+
+  # This GenServer keeps a pre-built bare-bones version of an exception (a
+  # "draft") to be reported to Rollbar, which is then filled with the data
+  # related to each specific exception when such exception is being
+  # reported. This GenServer is also responsible for actually sending data to
+  # the Rollbar API and receiving responses from said API.
+
   use GenServer
 
   require Logger
