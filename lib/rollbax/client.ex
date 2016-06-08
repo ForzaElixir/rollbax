@@ -76,21 +76,8 @@ defmodule Rollbax.Client do
     {:noreply, state}
   end
 
-  def handle_info({:hackney_response, _ref, :done}, state) do
-    {:noreply, state}
-  end
-
   def handle_info({:hackney_response, _ref, response}, state) do
-    case response do
-      {:status, code, desc} when code != 200 ->
-        Logger.warn("(Rollbax) unexpected API status: #{code}/#{desc}")
-      body when is_binary(body) ->
-        log_body(body)
-      {:error, reason} ->
-        Logger.error("(Rollbax) connection error: #{inspect(reason)}")
-      _otherwise ->
-        Logger.debug("(Rollbax) API response: #{inspect(response)}")
-    end
+    :ok = handle_hackney_response(response)
     {:noreply, state}
   end
 
@@ -106,7 +93,23 @@ defmodule Rollbax.Client do
     |> Poison.encode!(iodata: true)
   end
 
-  defp log_body(body) do
+  defp handle_hackney_response(:done) do
+    :ok
+  end
+
+  defp handle_hackney_response({:status, code, description}) do
+    if code == 200 do
+      :ok
+    else
+      Logger.error("(Rollbax) unexpected API status: #{code}/#{description}")
+    end
+  end
+
+  defp handle_hackney_response({:headers, headers}) do
+    Logger.debug("(Rollbax) API headers: #{inspect(headers)}")
+  end
+
+  defp handle_hackney_response(body) when is_binary(body) do
     case Poison.decode(body) do
       {:ok, %{"err" => 1, "message" => message}} when is_binary(message) ->
         Logger.error("(Rollbax) API returned an error: #{inspect message}")
@@ -115,5 +118,9 @@ defmodule Rollbax.Client do
       {:error, _} ->
         Logger.error("(Rollbax) API returned malformed JSON: #{inspect body}")
     end
+  end
+
+  defp handle_hackney_response({:error, reason}) do
+    Logger.error("(Rollbax) connection error: #{inspect(reason)}")
   end
 end
