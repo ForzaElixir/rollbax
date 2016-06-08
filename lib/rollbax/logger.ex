@@ -27,6 +27,12 @@ defmodule Rollbax.Logger do
     {:ok, state}
   end
 
+  # TODO: in the future, we probably need to flush all responses from Rollbar's
+  # API coming from logged messages, so nothing is printed.
+  def handle_event(:flush, state) do
+    {:ok, state}
+  end
+
   defp proceed?({Logger, _msg, _event_time, meta}) do
     Keyword.get(meta, :rollbax, true)
   end
