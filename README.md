@@ -3,29 +3,31 @@
 [![Build Status](https://travis-ci.org/elixir-addicts/rollbax.svg?branch=master "Build Status")](https://travis-ci.org/elixir-addicts/rollbax)
 [![Hex Version](https://img.shields.io/hexpm/v/rollbax.svg "Hex Version")](https://hex.pm/packages/rollbax)
 
-
-This is an Elixir client for the Rollbar service.
+Elixir client for [Rollbar](https://rollbar.com).
 
 ## Installation
 
 Add Rollbax as a dependency to your `mix.exs` file:
 
 ```elixir
-def application() do
-  [applications: [:rollbax]]
-end
-
 defp deps() do
   [{:rollbax, "~> 0.5"}]
 end
 ```
 
+and add it to your list of applications:
+
+```elixir
+def application() do
+  [applications: [:rollbax]]
+end
+```
+
 Then run `mix deps.get` in your shell to fetch the dependencies.
 
-### Configuration
+## Usage
 
-It requires `access_token` and `environment` parameters to be set
-in your application environment, usually defined in your `config/config.exs`:
+Rollbax requires some configuration in order to work. For example, in `config/config.exs`:
 
 ```elixir
 config :rollbax,
@@ -33,61 +35,62 @@ config :rollbax,
   environment: "production"
 ```
 
-## Usage
+Then, exceptions (errors, exits, and throws) can be reported to Rollbar using `Rollbax.report/3`:
 
 ```elixir
 try do
   DoesNotExist.for_sure()
 rescue
   exception ->
-    Rollbax.report(exception, System.stacktrace())
+    Rollbax.report(:error, exception, System.stacktrace())
 end
 ```
 
-### Notifier for Logger
+For detailed information on configuration and usage, take a look at the [online documentation](http://hexdocs.pm/rollbax).
 
-There is a Logger backend to send logs to the Rollbar,
-which could be configured as follows:
+### Logger backend
+
+Rollbax provides a backend for Elixir's `Logger` as the `Rollbax.Notifier` module. It can be configured as follows:
 
 ```elixir
+# We register Rollbax.Notifier as a Logger backend.
 config :logger,
   backends: [Rollbax.Notifier]
 
+# We configure the Rollbax.Notifier backend.
 config :logger, Rollbax.Notifier,
   level: :error
 ```
 
-The Rollbax log sending can be disabled by using Logger metadata:
+Sending logged messages to Rollbar can be disabled via `Logger` metadata:
 
 ```elixir
+# To disable reporting for all subsequent logs:
 Logger.metadata(rollbar: false)
-# For a single call
+
+# To disable reporting for the current logged message only:
 Logger.error("oops", rollbar: false)
 ```
 
 ### Plug and Phoenix
 
-The [`Plug.ErrorHandler` plug](https://hexdocs.pm/plug/Plug.ErrorHandler.html) can be used to send
-error reports inside a web request.
-
-In your router:
+The [`Plug.ErrorHandler` plug](https://hexdocs.pm/plug/Plug.ErrorHandler.html) can be used to report errors in web requests to Rollbar. In your router:
 
 ```elixir
 defmodule MyApp.Router do
-  use Plug.Router # Or `use MyApp.Web, :router` for Phoenix apps
+  use Plug.Router # or `use MyApp.Web, :router` for Phoenix apps
   use Plug.ErrorHandler
 
   # Reports the exception and re-raises it
-  defp handle_errors(conn, %{kind: _kind, reason: reason, stack: stack}) do
-    Rollbax.report(reason, stack, %{params: conn.params})
+  defp handle_errors(conn, %{kind: kind, reason: reason, stack: stack}) do
+    Rollbax.report(kind, reason, %{params: conn.params})
   end
 end
 ```
 
 ### Non-production reporting
 
-For non-production environments error reporting
-can be disabled or turned into logging:
+For non-production environments error reporting can be either disabled completely (by setting `:enabled` to `false`) or replaced with logging of exceptions (by setting `:enabled` to `:log`).
 
 ```elixir
 config :rollbax, enabled: :log
