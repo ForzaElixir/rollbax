@@ -5,15 +5,14 @@ defmodule Rollbax.Item do
   # Refer to https://rollbar.com/docs/api/items_post for documentation on such
   # payload.
 
-  def draft(token, envt) do
-    {:ok, host} = :inet.gethostname
+  def draft(token, environment) do
     %{
       "access_token" => token,
       "data" => %{
         "server" => %{
-          "host" => List.to_string(host)
+          "host" => host(),
         },
-        "environment" => envt,
+        "environment" => environment,
         "language" => language(),
         "platform" => platform(),
         "notifier" => notifier()
@@ -100,6 +99,11 @@ defmodule Rollbax.Item do
     else
       Map.put(data, "custom", meta)
     end
+  end
+
+  defp host() do
+    {:ok, host} = :inet.gethostname()
+    List.to_string(host)
   end
 
   defp language() do
