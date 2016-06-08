@@ -2,6 +2,35 @@ defmodule Rollbax do
   @moduledoc """
   This module provides functions to report any kind of exception to
   [Rollbar](https://rollbar.com).
+
+  ## Configuration
+
+  The `:rollbax` application needs to be configured properly in order to
+  work. This configuration can be done, for example, in `config/config.exs`:
+
+      config :rollbax,
+        access_token: "9309123491",
+        environment: "production"
+
+  The following is a comprehensive list of configuration options supported by Rollbax:
+
+    * `:access_token` - (binary) the token needed to access the [Rollbar Items
+      API (POST)](https://rollbar.com/docs/api/items_post/). As of now, Rollbar
+      provides several access tokens for different "parts" of their API: for
+      this configuration option, the "post_server_item" access token is needed.
+    * `:environment` - (binary) the environment that will be attached to each
+      reported exception.
+    * `:enabled` - (`true | false | :log`) decides whether exception reported
+      with `Rollbax.report/5` are actually reported to Rollbar. If `true`, they
+      are reported; if `false`, `Rollbax.report/5` is basically a no-op; if
+      `:log`, exceptions reported with `Rollbax.report/5` are instead logged to
+      the shell.
+
+  ## Logger backend
+
+  Rollbax provides a Logger backend (`Rollbax.Notifier`) that reports logged
+  messages to Rollbar; for more information, look at the documenation for
+  `Rollbax.Notifier`.
   """
 
   use Application
