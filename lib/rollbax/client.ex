@@ -18,7 +18,7 @@ defmodule Rollbax.Client do
 
   ## GenServer state
 
-  defstruct [:draft, :url, :enabled]
+  defstruct [:draft, :url, :enabled, hackney_responses: %{}]
 
   ## Public API
 
@@ -76,9 +76,9 @@ defmodule Rollbax.Client do
     {:noreply, state}
   end
 
-  def handle_info({:hackney_response, _ref, response}, state) do
-    :ok = handle_hackney_response(response)
-    {:noreply, state}
+  def handle_info({:hackney_response, ref, response}, state) do
+    new_state = handle_hackney_response(ref, response, state)
+    {:noreply, new_state}
   end
 
   def handle_info(message, state) do
@@ -93,23 +93,9 @@ defmodule Rollbax.Client do
     |> Poison.encode!(iodata: true)
   end
 
-  defp handle_hackney_response(:done) do
-    :ok
-  end
+  defp handle_hackney_response(ref, :done, %{hackney_responses: responses} = state) do
+    body = responses |> Map.fetch!(ref) |> IO.iodata_to_binary()
 
-  defp handle_hackney_response({:status, code, description}) do
-    if code == 200 do
-      :ok
-    else
-      Logger.error("(Rollbax) unexpected API status: #{code}/#{description}")
-    end
-  end
-
-  defp handle_hackney_response({:headers, headers}) do
-    Logger.debug("(Rollbax) API headers: #{inspect(headers)}")
-  end
-
-  defp handle_hackney_response(body) when is_binary(body) do
     case Poison.decode(body) do
       {:ok, %{"err" => 1, "message" => message}} when is_binary(message) ->
         Logger.error("(Rollbax) API returned an error: #{inspect message}")
@@ -118,9 +104,30 @@ defmodule Rollbax.Client do
       {:error, _} ->
         Logger.error("(Rollbax) API returned malformed JSON: #{inspect body}")
     end
+
+    %{state | hackney_responses: Map.delete(responses, ref)}
   end
 
-  defp handle_hackney_response({:error, reason}) do
+  defp handle_hackney_response(ref, {:status, code, description}, %{hackney_responses: responses} = state) do
+    if code != 200 do
+      Logger.error("(Rollbax) unexpected API status: #{code}/#{description}")
+    end
+
+    %{state | hackney_responses: Map.put(responses, ref, [])}
+  end
+
+  defp handle_hackney_response(_ref, {:headers, headers}, state) do
+    Logger.debug("(Rollbax) API headers: #{inspect(headers)}")
+    state
+  end
+
+  defp handle_hackney_response(ref, body_chunk, %{hackney_responses: responses} = state)
+  when is_binary(body_chunk) do
+    %{state | hackney_responses: Map.update!(responses, ref, &[&1 | body_chunk])}
+  end
+
+  defp handle_hackney_response(ref, {:error, reason}, %{hackney_responses: responses} = state) do
     Logger.error("(Rollbax) connection error: #{inspect(reason)}")
+    %{state | hackney_responses: Map.delete(responses, ref)}
   end
 end
