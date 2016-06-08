@@ -50,15 +50,15 @@ For detailed information on configuration and usage, take a look at the [online 
 
 ### Logger backend
 
-Rollbax provides a backend for Elixir's `Logger` as the `Rollbax.Notifier` module. It can be configured as follows:
+Rollbax provides a backend for Elixir's `Logger` as the `Rollbax.Logger` module. It can be configured as follows:
 
 ```elixir
-# We register Rollbax.Notifier as a Logger backend.
+# We register Rollbax.Logger as a Logger backend.
 config :logger,
-  backends: [Rollbax.Notifier]
+  backends: [Rollbax.Logger]
 
-# We configure the Rollbax.Notifier backend.
-config :logger, Rollbax.Notifier,
+# We configure the Rollbax.Logger backend.
+config :logger, Rollbax.Logger,
   level: :error
 ```
 

@@ -1,4 +1,4 @@
-defmodule Rollbax.Notifier do
+defmodule Rollbax.Logger do
   @moduledoc false
 
   # Logger backend that reports messages to Rollbar.

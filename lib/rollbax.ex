@@ -28,9 +28,9 @@ defmodule Rollbax do
 
   ## Logger backend
 
-  Rollbax provides a Logger backend (`Rollbax.Notifier`) that reports logged
+  Rollbax provides a Logger backend (`Rollbax.Logger`) that reports logged
   messages to Rollbar; for more information, look at the documenation for
-  `Rollbax.Notifier`.
+  `Rollbax.Logger`.
   """
 
   use Application

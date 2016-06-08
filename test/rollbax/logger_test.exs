@@ -1,15 +1,15 @@
-defmodule Rollbax.NotifierTest do
+defmodule Rollbax.LoggerTest do
   use ExUnit.RollbaxCase
+
+  alias Rollbax.Logger, as: L
 
   require Logger
 
-  alias Rollbax.Notifier
-
   setup_all do
     {:ok, pid} = start_rollbax_client("token1", "test")
-    {:ok, _} = Logger.add_backend(Notifier, flush: true)
+    {:ok, _} = Logger.add_backend(L, flush: true)
     on_exit(fn ->
-      Logger.remove_backend(Notifier, flush: true)
+      Logger.remove_backend(L, flush: true)
       ensure_rollbax_client_down(pid)
     end)
   end
@@ -20,7 +20,7 @@ defmodule Rollbax.NotifierTest do
   end
 
   test "notify level filtering" do
-    Logger.configure_backend(Notifier, level: :warn)
+    Logger.configure_backend(L, level: :warn)
     capture_log(fn ->
       Logger.error(["test", ?\s, "pass"])
       Logger.info("miss")
