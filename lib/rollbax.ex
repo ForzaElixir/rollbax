@@ -87,11 +87,26 @@ defmodule Rollbax do
     # term) will assume that term is an Erlang error (it will say
     # "** # (ErlangError) ...").
     if kind == :error and not Exception.exception?(value) do
-      raise ArgumentError, "expected an exception when the kind is :error, got: #{value}"
+      raise ArgumentError, "expected an exception, got: #{value}"
     end
 
     body = Rollbax.Item.exception_to_body(kind, value, stacktrace)
     Rollbax.Client.emit(:error, unix_time(), body, custom, occurrence_data)
+  end
+
+  @doc """
+  Same as `report(:error, exception, stacktrace)`.
+
+  Fails if `exception` is not an exception.
+
+  ## Examples
+
+      Rollbax.report(ArgumentError.exception("oops"), System.stacktrace)
+
+  """
+  @spec report(Exception.t, [any]) :: :ok
+  def report(exception, stacktrace) when is_list(stacktrace) do
+    report(:error, exception, stacktrace)
   end
 
   defp get_config(key, default) do
