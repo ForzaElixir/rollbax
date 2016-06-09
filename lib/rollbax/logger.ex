@@ -44,7 +44,7 @@ defmodule Rollbax.Logger do
   defp post_event(level, {Logger, message, event_time, meta}, keys) do
     event_unix_time = event_time_to_unix(event_time)
     body = Rollbax.Item.message_to_body(IO.chardata_to_string(message))
-    custom = Map.take(meta, keys)
+    custom = Keyword.take(meta, keys) |> Enum.into(%{})
     Rollbax.Client.emit(level, event_unix_time, body, custom, %{})
   end
 
