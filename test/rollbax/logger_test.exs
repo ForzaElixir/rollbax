@@ -43,7 +43,7 @@ defmodule Rollbax.LoggerTest do
     Logger.configure_backend(Rollbax.Logger, metadata: [:foo])
     capture_log(fn -> Logger.error("pass", foo: "bar") end)
     assert_receive {:api_request, body}
-    assert body =~ "body\":\"pass\""
-    assert body =~ "foo\":\"bar\""
+    assert body =~ ~s("body":"pass")
+    assert body =~ ~s("foo":"bar")
   end
 end

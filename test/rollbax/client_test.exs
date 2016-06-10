@@ -18,11 +18,11 @@ defmodule Rollbax.ClientTest do
   test "emit/5" do
     :ok = Client.emit(:warn, unix_time(), %{"message" => %{"body" => "pass"}}, _custom = %{foo: "bar"}, %{})
     assert_receive {:api_request, body}
-    assert body =~ "access_token\":\"token1"
-    assert body =~ "environment\":\"test"
-    assert body =~ "level\":\"warn"
-    assert body =~ "body\":\"pass"
-    assert body =~ "foo\":\"bar"
+    assert body =~ ~s("access_token":"token1")
+    assert body =~ ~s("environment":"test")
+    assert body =~ ~s("level":"warn")
+    assert body =~ ~s("body":"pass")
+    assert body =~ ~s("foo":"bar")
   end
 
   test "mass sending" do
