@@ -1,15 +1,13 @@
 defmodule Rollbax.LoggerTest do
   use ExUnit.RollbaxCase
 
-  alias Rollbax.Logger, as: L
-
   require Logger
 
   setup_all do
     {:ok, pid} = start_rollbax_client("token1", "test")
-    {:ok, _} = Logger.add_backend(L, flush: true)
+    {:ok, _} = Logger.add_backend(Rollbax.Logger, flush: true)
     on_exit(fn ->
-      Logger.remove_backend(L, flush: true)
+      Logger.remove_backend(Rollbax.Logger, flush: true)
       ensure_rollbax_client_down(pid)
     end)
   end
@@ -19,8 +17,8 @@ defmodule Rollbax.LoggerTest do
     on_exit(&RollbarAPI.stop/0)
   end
 
-  test "notify level filtering" do
-    Logger.configure_backend(L, level: :warn)
+  test "level filtering" do
+    Logger.configure_backend(Rollbax.Logger, level: :error)
     capture_log(fn ->
       Logger.error(["test", ?\s, "pass"])
       Logger.info("miss")
@@ -30,9 +28,8 @@ defmodule Rollbax.LoggerTest do
     refute_receive {:api_request, _body}
   end
 
-  test "notifier skip" do
-    Logger.metadata(rollbax: false)
-    capture_log(fn -> Logger.error("miss") end)
+  test "using rollbax: false for disabling reporting to Rollbar" do
+    capture_log(fn -> Logger.error("miss", rollbax: false) end)
     refute_receive {:api_request, _body}
   end
 
@@ -40,5 +37,13 @@ defmodule Rollbax.LoggerTest do
     :ok = RollbarAPI.stop
     capture_log(fn -> Logger.error("miss") end)
     refute_receive {:api_request, _body}
+  end
+
+  test "reporting with metadata" do
+    Logger.configure_backend(Rollbax.Logger, metadata: [:foo])
+    capture_log(fn -> Logger.error("pass", foo: "bar") end)
+    assert_receive {:api_request, body}
+    assert body =~ "body\":\"pass\""
+    assert body =~ "foo\":\"bar\""
   end
 end

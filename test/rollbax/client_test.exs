@@ -15,7 +15,7 @@ defmodule Rollbax.ClientTest do
     on_exit(&RollbarAPI.stop/0)
   end
 
-  test "post payload" do
+  test "emit/5" do
     :ok = Client.emit(:warn, unix_time(), %{"message" => %{"body" => "pass"}}, _custom = %{foo: "bar"}, %{})
     assert_receive {:api_request, body}
     assert body =~ "access_token\":\"token1"
@@ -40,7 +40,7 @@ defmodule Rollbax.ClientTest do
     log = capture_log(fn ->
       :ok = Client.emit(:error, unix_time(), %{"message" => %{"body" => "miss"}}, %{}, %{})
     end)
-    assert log =~ "[error] (Rollbax) connection error:"
+    assert log =~ "[error] (Rollbax) connection error: :econnrefused"
     refute_receive {:api_request, _body}
   end
 
