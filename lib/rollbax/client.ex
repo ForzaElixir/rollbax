@@ -27,11 +27,6 @@ defmodule Rollbax.Client do
     GenServer.start_link(__MODULE__, state, [name: __MODULE__])
   end
 
-  def new(token, environment, url, enabled) do
-    draft = Item.draft(token, environment)
-    %__MODULE__{draft: draft, url: url, enabled: enabled}
-  end
-
   def emit(level, timestamp, body, custom, occurrence_data) do
     if pid = Process.whereis(__MODULE__) do
       event = {Atom.to_string(level), timestamp, body, custom, occurrence_data}
@@ -91,6 +86,11 @@ defmodule Rollbax.Client do
   end
 
   ## Helper functions
+
+  defp new(token, environment, url, enabled) do
+    draft = Item.draft(token, environment)
+    %__MODULE__{draft: draft, url: url, enabled: enabled}
+  end
 
   defp compose_json(draft, event) do
     Item.compose(draft, event)
