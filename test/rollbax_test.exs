@@ -13,7 +13,7 @@ defmodule RollbaxTest do
     on_exit(&RollbarAPI.stop/0)
   end
 
-  test "report/3: reporting an error" do
+  test "report/3 with an error" do
     stacktrace = [{Test, :report, 2, [file: 'file.exs', line: 16]}]
     exception = RuntimeError.exception("pass")
     :ok = Rollbax.report(:error, exception, stacktrace, %{}, %{uuid: "d4c7"})
@@ -28,7 +28,7 @@ defmodule RollbaxTest do
     refute body =~ ~s("custom")
   end
 
-  test "report/3: reporting an exit" do
+  test "report/3 with an exit" do
     stacktrace = [{Test, :report, 2, [file: 'file.exs', line: 16]}]
     :ok = Rollbax.report(:exit, :oops, stacktrace)
     assert_receive {:api_request, body}
@@ -41,7 +41,7 @@ defmodule RollbaxTest do
     refute body =~ ~s("custom")
   end
 
-  test "report/3: reporting a throw" do
+  test "report/3 with a throw" do
     stacktrace = [{Test, :report, 2, [file: 'file.exs', line: 16]}]
     :ok = Rollbax.report(:throw, :oops, stacktrace)
     assert_receive {:api_request, body}
