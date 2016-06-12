@@ -1,19 +1,67 @@
 defmodule Rollbax.Logger do
-  @moduledoc false
+  @moduledoc """
+  `Logger` backend that reports logged messages to Rollbar.
 
-  # Logger backend that reports messages to Rollbar.
+  This module is a `Logger` backend that reports logged messages to Rollbar. In
+  order to use it, first make sure that Rollbax is configured correctly for
+  reporting to Rollbar (look at the documentation for the `Rollbax` module for
+  more information). Then, add `Rollbax.Logger` as a backend in the
+  configuration for the `:logger` application. For example, in
+  `config/config.exs`:
+
+      config :logger,
+        backends: [:console, Rollbax.Logger]
+
+  ## Configuration
+
+  `Rollbax.Logger` supports the following configuration options:
+
+    * `:level` - (`:debug`, `:info`, `:warn`, or `:error`) the logging
+      level. Any message with severity less than the configured level will not
+      be reported to Rollbar. Note that messages are filtered by the general
+      `:level` configuration option for the `:logger` application first (in the
+      same way as for the `:console` backend).
+    * `:metadata` - (list of atoms) list of metadata to be attached to the
+      reported message. These metadata will be showed alongside each
+      "occurrence" of a given item in Rollbar. Defaults to `[]`.
+
+  These options can be configured under `Rollbax.Logger` in the configuration
+  for the `:logger` application. For example, in `config/config.exs`:
+
+      config :logger, Rollbax.Logger,
+        level: :warn,
+        metadata: [:file, :line, :function]
+
+  ## Disable reporting
+
+  Reporting to Rollbar can manually disabled for given `Logger` calls by passing
+  the `rollbar: false` as a metadata to such calls. For example, to disable
+  reporting for a specific logged message:
+
+      Logger.error("Secret error, better not report this", rollbar: false)
+
+  To disable reporting for all subsequent messages:
+
+      Logger.metadata(rollbar: false)
+
+  """
 
   use GenEvent
 
   @unix_epoch :calendar.datetime_to_gregorian_seconds({{1970, 1, 1}, {0, 0, 0}})
 
+  @doc false
   def init(__MODULE__) do
     {:ok, configure([])}
   end
 
+  @doc false
   def handle_call({:configure, opts}, _state) do
     {:ok, :ok, configure(opts)}
   end
+
+  @doc false
+  def handle_event(event, state)
 
   def handle_event({_level, gl, _event}, state)
   when node(gl) != node() do
