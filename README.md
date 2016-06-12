@@ -83,7 +83,7 @@ defmodule MyApp.Router do
 
   # Reports the exception and re-raises it
   defp handle_errors(conn, %{kind: kind, reason: reason, stack: stack}) do
-    Rollbax.report(kind, reason, %{params: conn.params})
+    Rollbax.report(kind, reason, stack, %{params: conn.params})
   end
 end
 ```
