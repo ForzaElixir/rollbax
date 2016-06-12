@@ -31,8 +31,8 @@ defmodule Rollbax.Item do
     end)
   end
 
-  def message_to_body(message) do
-    %{"message" => %{"body" => message}}
+  def message_to_body(message, meta) do
+    %{"message" => Map.put(meta, "body", message)}
   end
 
   def exception_to_body(kind, value, stacktrace) do
