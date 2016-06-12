@@ -1,15 +1,21 @@
 defmodule Rollbax.Mixfile do
   use Mix.Project
 
+  @version "0.6.0"
+
   def project() do
     [app: :rollbax,
-     version: "0.6.0",
+     version: @version,
      elixir: "~> 1.0",
      build_embedded: Mix.env == :prod,
      start_permanent: Mix.env == :prod,
      description: description(),
      package: package(),
-     deps: deps()]
+     deps: deps(),
+     name: "Rollbax",
+     docs: [main: "Rollbax",
+            source_ref: "v#{@version}",
+            source_url: "https://github.com/elixir-addicts/rollbax"]]
   end
 
   def application() do
