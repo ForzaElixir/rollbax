@@ -55,7 +55,12 @@ defmodule RollbarAPI do
     {:ok, body, conn} = read_body(conn)
     :timer.sleep(30)
     send test, {:api_request, body}
-    send_resp(conn, 200, "{}")
+
+    if get_in(Poison.decode!(body), ["data", "custom", "return_error?"]) do
+      send_resp(conn, 400, ~s({"err": 1, "message": "that was a bad request"}))
+    else
+      send_resp(conn, 200, "{}")
+    end
   end
 
   def call(conn, _test) do

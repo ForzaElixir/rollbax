@@ -44,6 +44,16 @@ defmodule Rollbax.ClientTest do
     refute_receive {:api_request, _body}
   end
 
+  test "errors from the API are logged" do
+    log = capture_log(fn ->
+      :ok = Client.emit(:error, unix_time(), %{}, %{return_error?: true}, %{})
+      assert_receive {:api_request, _body}
+    end)
+
+    assert log =~ ~s{[error] (Rollbax) unexpected API status: 400}
+    assert log =~ ~s{[error] (Rollbax) API returned an error: "that was a bad request"}
+  end
+
   defp unix_time() do
     {mgsec, sec, _usec} = :os.timestamp()
     mgsec * 1_000_000 + sec
