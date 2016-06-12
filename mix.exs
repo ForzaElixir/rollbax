@@ -3,7 +3,7 @@ defmodule Rollbax.Mixfile do
 
   def project() do
     [app: :rollbax,
-     version: "0.6.0-dev",
+     version: "0.6.0",
      elixir: "~> 1.0",
      build_embedded: Mix.env == :prod,
      start_permanent: Mix.env == :prod,
