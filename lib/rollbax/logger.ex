@@ -119,15 +119,15 @@ defmodule Rollbax.Logger do
   replacement = "�"
 
   defp prune_chardata(binary) when is_binary(binary), do: prune_binary(binary, "")
-  defp prune_chardata([h | t]) when h in 0..1114111, do: [h | prune_chardata(t)]
-  defp prune_chardata([h | t]), do: [prune_chardata(h) | prune_chardata(t)]
+  defp prune_chardata([head | tail]) when head in 0..1114111, do: [head | prune_chardata(tail)]
+  defp prune_chardata([head | tail]), do: [prune_chardata(head) | prune_chardata(tail)]
   defp prune_chardata([]), do: []
   defp prune_chardata(_), do: unquote(replacement)
 
-  defp prune_binary(<<h::utf8, t::binary>>, acc),
-    do: prune_binary(t, <<acc::binary, h::utf8>>)
-  defp prune_binary(<<_, t::binary>>, acc),
-    do: prune_binary(t, <<acc::binary, unquote(replacement)>>)
+  defp prune_binary(<<head::utf8, tail::binary>>, acc),
+    do: prune_binary(tail, <<acc::binary, head::utf8>>)
+  defp prune_binary(<<_, tail::binary>>, acc),
+    do: prune_binary(tail, <<acc::binary, unquote(replacement)>>)
   defp prune_binary(<<>>, acc),
     do: acc
 end
