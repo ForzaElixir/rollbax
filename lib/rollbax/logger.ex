@@ -91,8 +91,9 @@ defmodule Rollbax.Logger do
 
   defp post_event(level, {Logger, message, event_time, meta}, keys) do
     event_unix_time = event_time_to_unix(event_time)
+    message = message |> prune_chardata() |> IO.chardata_to_string()
     meta = Keyword.take(meta, keys) |> Enum.into(%{})
-    body = Rollbax.Item.message_to_body(IO.chardata_to_string(message), meta)
+    body = Rollbax.Item.message_to_body(message, meta)
     Rollbax.Client.emit(level, event_unix_time, body, %{}, %{})
   end
 
@@ -109,4 +110,24 @@ defmodule Rollbax.Logger do
   defp event_time_to_unix({{_, _, _} = date, {hour, min, sec, _millisec}}) do
     :calendar.datetime_to_gregorian_seconds({date, {hour, min, sec}}) - @unix_epoch
   end
+
+  # Before converting the chardata to log into a string (with
+  # IO.chardata_to_string/1), we need to prune it so that we don't try to
+  # convert invalid unicode codepoints, which leads to a UnicodeConversionError
+  # being raised. This function is taken basically straight from
+  # https://github.com/elixir-lang/elixir/blob/e26f8de5753c16ad047b25e4ee9c31b9a45026e5/lib/logger/lib/logger/formatter.ex#L49-L66.
+  replacement = "�"
+
+  defp prune_chardata(binary) when is_binary(binary), do: prune_binary(binary, "")
+  defp prune_chardata([h | t]) when h in 0..1114111, do: [h | prune_chardata(t)]
+  defp prune_chardata([h | t]), do: [prune_chardata(h) | prune_chardata(t)]
+  defp prune_chardata([]), do: []
+  defp prune_chardata(_), do: unquote(replacement)
+
+  defp prune_binary(<<h::utf8, t::binary>>, acc),
+    do: prune_binary(t, <<acc::binary, h::utf8>>)
+  defp prune_binary(<<_, t::binary>>, acc),
+    do: prune_binary(t, <<acc::binary, unquote(replacement)>>)
+  defp prune_binary(<<>>, acc),
+    do: acc
 end
