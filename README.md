@@ -2,6 +2,7 @@
 
 [![Build Status](https://travis-ci.org/elixir-addicts/rollbax.svg?branch=master "Build Status")](https://travis-ci.org/elixir-addicts/rollbax)
 [![Hex Version](https://img.shields.io/hexpm/v/rollbax.svg "Hex Version")](https://hex.pm/packages/rollbax)
+[![Deps Status](https://beta.hexfaktor.org/badge/all/github/elixir-addicts/rollbax.svg)](https://beta.hexfaktor.org/github/elixir-addicts/rollbax)
 
 Elixir client for [Rollbar](https://rollbar.com).
 
