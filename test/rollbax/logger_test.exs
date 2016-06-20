@@ -47,9 +47,11 @@ defmodule Rollbax.LoggerTest do
     assert body =~ ~s("foo":"bar")
   end
 
-  test "logging a message that has invalid unicode codepoints" do
-    capture_log(fn -> Logger.error(["invalid:", ?\s, 1_000_000_000]) end)
-    assert_receive {:api_request, body}
-    assert body =~ ~s("body":"invalid: �")
+  if Version.compare(System.version, "1.3.0-rc.1") != :lt do
+    test "logging a message that has invalid unicode codepoints" do
+      capture_log(fn -> Logger.error(["invalid:", ?\s, 1_000_000_000]) end)
+      assert_receive {:api_request, body}
+      assert body =~ ~s("body":"invalid: �")
+    end
   end
 end
