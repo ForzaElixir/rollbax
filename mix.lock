@@ -1,7 +1,7 @@
 %{"cowboy": {:hex, :cowboy, "1.0.2", "876a2f63eaa5da5bd0610569d6402cabef8b3f48171233c11cfeee9f37d1f0c9", [:rebar], [{:cowlib, "~> 1.0.0", [hex: :cowlib, optional: false]}, {:ranch, "~> 1.0", [hex: :ranch, optional: false]}]},
   "cowlib": {:hex, :cowlib, "1.0.1", "175a633c472058bbeb1b238a6409766a48b52b43b7b687ed70f03cf6e854b7d9", [:make], []},
   "earmark": {:hex, :earmark, "0.2.1", "ba6d26ceb16106d069b289df66751734802777a3cbb6787026dd800ffeb850f3", [:mix], []},
-  "ex_doc": {:hex, :ex_doc, "0.11.5", "0dc51cb84f8312162a2313d6c71573a9afa332333d8a332bb12540861b9834db", [:mix], [{:earmark, "~> 0.1.17 or ~> 0.2", [hex: :earmark, optional: true]}]},
+  "ex_doc": {:hex, :ex_doc, "0.12.0", "b774aabfede4af31c0301aece12371cbd25995a21bb3d71d66f5c2fe074c603f", [:mix], [{:earmark, "~> 0.2", [hex: :earmark, optional: false]}]},
   "hackney": {:hex, :hackney, "1.1.0", "e999ef5fbd9d199b00953b26cbcb4396402e8e4fca6d2c48501253d98bd63723", [:make, :rebar], [{:ssl_verify_hostname, "~> 1.0", [hex: :ssl_verify_hostname, optional: false]}, {:idna, "~> 1.0", [hex: :idna, optional: false]}]},
   "idna": {:hex, :idna, "1.0.2", "397e3d001c002319da75759b0a81156bf11849c71d565162436d50020cb7265e", [:make], []},
   "plug": {:hex, :plug, "0.13.0", "2fed890715c53a2e47a8c410fac5b198770aa7abe996cf85cd496c3492dc4bc8", [:mix], [{:cowboy, "~> 1.0", [hex: :cowboy, optional: true]}]},
