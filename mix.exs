@@ -15,7 +15,8 @@ defmodule Rollbax.Mixfile do
      name: "Rollbax",
      docs: [main: "Rollbax",
             source_ref: "v#{@version}",
-            source_url: "https://github.com/elixir-addicts/rollbax"]]
+            source_url: "https://github.com/elixir-addicts/rollbax",
+            extras: ["pages/Using Rollbax in Plug-based applications.md"]]]
   end
 
   def application() do

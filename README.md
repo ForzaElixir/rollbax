@@ -74,19 +74,7 @@ Logger.error("oops", rollbar: false)
 
 ### Plug and Phoenix
 
-The [`Plug.ErrorHandler` plug](https://hexdocs.pm/plug/Plug.ErrorHandler.html) can be used to report errors in web requests to Rollbar. In your router:
-
-```elixir
-defmodule MyApp.Router do
-  use Plug.Router # or `use MyApp.Web, :router` for Phoenix apps
-  use Plug.ErrorHandler
-
-  # Reports the exception and re-raises it
-  defp handle_errors(conn, %{kind: kind, reason: reason, stack: stack}) do
-    Rollbax.report(kind, reason, stack, %{params: conn.params})
-  end
-end
-```
+For examples on how to take advantage of Rollbax in Plug-based applications (including Phoenix applications), have a look at the ["Using Rollbax in Plug-based applications" page in the documentation](http://hexdocs.pm/rollbax/using-rollbax-in-plug-based-applications.html).
 
 ### Non-production reporting
 
