@@ -29,18 +29,24 @@ defp handle_errors(conn, %{kind: kind, reason: reason, stack: stacktrace}) do
     conn
     |> Plug.Conn.fetch_cookies()
     |> Plug.Conn.fetch_query_params()
-    |> Plug.Conn.fetch_session()
 
-  conn_data = %{ "request" => %{ "cookies" => conn.req_cookies, "url" =>
-    "#{conn.scheme}://#{conn.host}:#{conn.port}#{conn.request_path}", "user_ip"
-    => (conn.remote_ip |> Tuple.to_list() |> Enum.join(".")), "headers" =>
-    Enum.into(conn.req_headers, %{}), "session" => conn.private[:plug_session]
-    || %{}, "params" => conn.params, "method" => conn.method, }, "server" => %{
-    "pid" => System.get_env("MY_SERVER_PID"), "host" =>
-    "#{System.get_env("MY_HOSTNAME")}:#{System.get_env("MY_PORT")}", "root" =>
-    System.get_env("MY_APPLICATION_PATH"), }, }
+  conn_data = %{
+    "request" => %{
+      "cookies" => conn.req_cookies,
+      "url" => "#{conn.scheme}://#{conn.host}:#{conn.port}#{conn.request_path}",
+      "user_ip" => (conn.remote_ip |> Tuple.to_list() |> Enum.join(".")),
+      "headers" => Enum.into(conn.req_headers, %{}),
+      "params" => conn.params,
+      "method" => conn.method,
+    },
+    "server" => %{
+      "pid" => System.get_env("MY_SERVER_PID"),
+      "host" => "#{System.get_env("MY_HOSTNAME")}:#{System.get_env("MY_PORT")}",
+      "root" => System.get_env("MY_APPLICATION_PATH"),
+    },
+  }
 
-  Rollbax.report(kind, reason, stack, %{}, conn_data)
+  Rollbax.report(kind, reason, stacktrace, %{}, conn_data)
 end
 ```
 
