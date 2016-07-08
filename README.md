@@ -11,7 +11,7 @@ Add Rollbax as a dependency to your `mix.exs` file:
 
 ```elixir
 defp deps() do
-  [{:rollbax, "~> 0.6.1"}]
+  [{:rollbax, "~> 0.6"}]
 end
 ```
 
