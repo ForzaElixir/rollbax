@@ -13,7 +13,7 @@ defmodule MyApp.Router do
 end
 ```
 
-Rollbax also supports attaching *metadata* to a reported exception as well as overriding Rollbar data for a reported exception. Both these can be used to have more detailed reports. For example, in the code snippet above, we could report the request parameters as metadata to be attached to the exception:
+Rollbax also supports attaching *metadata* to a reported exception as well as overriding Rollbar data for a reported exception. Both these can be used to have more detailed reports. For example, in the code snippet below, we could report the request parameters as metadata to be attached to the exception:
 
 ```elixir
 defp handle_errors(conn, %{kind: kind, reason: reason, stack: stacktrace}) do
@@ -21,7 +21,7 @@ defp handle_errors(conn, %{kind: kind, reason: reason, stack: stacktrace}) do
 end
 ```
 
-Since Rollbar supports the concept of "request" and "server" in the [Item POST API](https://rollbar.com/docs/api/items_post/), a lot of data that Rollbar will be able to understand can be attached to a reported exceptions. To add data about the host, the request, and more to the exception reported in the snippet above, you could do something like this:
+Since Rollbar supports the concept of "request" and "server" in the [Item POST API](https://rollbar.com/docs/api/items_post/), a lot of data that Rollbar will be able to understand can be attached to a reported exceptions. To add data about the host, the request, and more to the exception reported in the snippet below, you could do something like this:
 
 ```elixir
 defp handle_errors(conn, %{kind: kind, reason: reason, stack: stacktrace}) do
