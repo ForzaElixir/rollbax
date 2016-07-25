@@ -14,17 +14,21 @@ defmodule Rollbax do
 
   The following is a comprehensive list of configuration options supported by Rollbax:
 
-    * `:access_token` - (binary) the token needed to access the [Rollbar Items
-      API (POST)](https://rollbar.com/docs/api/items_post/). As of now, Rollbar
-      provides several access tokens for different "parts" of their API: for
+    * `:access_token` - (binary or `{:system, binary}`) the token needed to access the
+      [Rollbar Items API (POST)](https://rollbar.com/docs/api/items_post/). As of now,
+      Rollbar provides several access tokens for different "parts" of their API: for
       this configuration option, the "post_server_item" access token is needed.
-    * `:environment` - (binary) the environment that will be attached to each
-      reported exception.
+    * `:environment` - (binary or `{:system, binary}`) the environment that will
+      be attached to each reported exception.
     * `:enabled` - (`true | false | :log`) decides whether exception reported
       with `Rollbax.report/5` are actually reported to Rollbar. If `true`, they
       are reported; if `false`, `Rollbax.report/5` is basically a no-op; if
       `:log`, exceptions reported with `Rollbax.report/5` are instead logged to
       the shell.
+
+  The `:access_token` and `:environment` options accept a binary or a
+  `{:system, "VAR_NAME"}` tuple. When given a tuple like `{:system, "VAR_NAME"}`,
+  the value will be referenced from `System.get_env("VAR_NAME")` at runtime.
 
   ## Logger backend
 
@@ -41,8 +45,8 @@ defmodule Rollbax do
 
     enabled = get_config(:enabled, true)
 
-    token = fetch_config(:access_token)
-    envt  = fetch_config(:environment)
+    token = fetch_and_resolve_config(:access_token)
+    envt  = fetch_and_resolve_config(:environment)
 
     children = [
       worker(Rollbax.Client, [token, envt, enabled])
@@ -127,11 +131,14 @@ defmodule Rollbax do
     Application.get_env(:rollbax, key, default)
   end
 
-  defp fetch_config(key) do
-    case get_config(key, :not_found) do
-      :not_found ->
+  defp fetch_and_resolve_config(key) do
+    case Application.fetch_env(:rollbax, key) do
+      {:ok, {:system, var}} when is_binary(var) ->
+        System.get_env(var) || raise ArgumentError, "system environment variable #{inspect(var)} is not set"
+      {:ok, value} ->
+        value
+      :error ->
         raise ArgumentError, "the configuration parameter #{inspect(key)} is not set"
-      value -> value
     end
   end
 
