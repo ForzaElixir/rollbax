@@ -76,6 +76,14 @@ Logger.error("oops", rollbar: false)
 
 For examples on how to take advantage of Rollbax in Plug-based applications (including Phoenix applications), have a look at the ["Using Rollbax in Plug-based applications" page in the documentation](http://hexdocs.pm/rollbax/using-rollbax-in-plug-based-applications.html).
 
+### Ignore errors
+
+Rollbax can ignore errors by their Exception module name. For example, to ignore 404s in Phoenix, you can use the following config option
+
+```elixir
+config :rollbax, ignore_list: [Phoenix.Router.NoRouteError]
+```
+
 ### Non-production reporting
 
 For non-production environments error reporting can be either disabled completely (by setting `:enabled` to `false`) or replaced with logging of exceptions (by setting `:enabled` to `:log`).

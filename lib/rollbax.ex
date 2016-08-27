@@ -1,4 +1,6 @@
 defmodule Rollbax do
+  require Logger
+
   @moduledoc """
   This module provides functions to report any kind of exception to
   [Rollbar](https://rollbar.com).
@@ -115,16 +117,29 @@ defmodule Rollbax do
   """
   @spec report(:error | :exit | :throw, any, [any], map, map) :: :ok
   def report(kind, value, stacktrace, custom \\ %{}, occurrence_data \\ %{})
+
+
   when kind in [:error, :exit, :throw] and is_list(stacktrace) and is_map(custom) and is_map(occurrence_data) do
     # We need this manual check here otherwise Exception.format_banner(:error,
     # term) will assume that term is an Erlang error (it will say
     # "** # (ErlangError) ...").
     if kind == :error and not Exception.exception?(value) do
       raise ArgumentError, "expected an exception when the kind is :error, got: #{value}"
+    else
+      body = Rollbax.Item.exception_to_body(kind, value, stacktrace)
+      case value do
+        %{} -> report_or_ignore(value, body, custom, occurrence_data)
+        _ -> Rollbax.Client.emit(:error, unix_time(), body, custom, occurrence_data)
+      end
     end
+  end
 
-    body = Rollbax.Item.exception_to_body(kind, value, stacktrace)
-    Rollbax.Client.emit(:error, unix_time(), body, custom, occurrence_data)
+  defp report_or_ignore(value, body, custom, occurrence_data) do
+    if Enum.member?(get_config(:ignore_list, []), value.__struct__) do
+      Logger.info("(Rollbax) ignoring error #{value.__struct__}")
+    else
+      Rollbax.Client.emit(:error, unix_time(), body, custom, occurrence_data)
+    end
   end
 
   defp get_config(key, default) do
