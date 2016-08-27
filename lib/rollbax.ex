@@ -128,13 +128,13 @@ defmodule Rollbax do
     else
       body = Rollbax.Item.exception_to_body(kind, value, stacktrace)
       case value do
-        %{} -> report_or_ignore(kind, value, body, stacktrace, custom, occurrence_data)
+        %{} -> report_or_ignore(value, body, custom, occurrence_data)
         _ -> Rollbax.Client.emit(:error, unix_time(), body, custom, occurrence_data)
       end
     end
   end
 
-  defp report_or_ignore(kind, value, body, stacktrace, custom, occurrence_data) do
+  defp report_or_ignore(value, body, custom, occurrence_data) do
     if Enum.member?(get_config(:ignore_list, []), value.__struct__) do
       Logger.info("(Rollbax) ignoring error #{value.__struct__}")
     else
