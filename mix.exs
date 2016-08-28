@@ -31,7 +31,7 @@ defmodule Rollbax.Mixfile do
      {:ex_doc, ">= 0.0.0", only: :docs},
      {:earmark, ">= 0.0.0", only: :docs},
 
-     {:plug,   "~> 0.13.0", only: :test},
+     {:plug,   "~> 1.0", only: :test},
      {:cowboy, "~> 1.0.0", only: :test}]
   end
 
