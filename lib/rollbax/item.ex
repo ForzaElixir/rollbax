@@ -31,8 +31,8 @@ defmodule Rollbax.Item do
     end)
   end
 
-  def message_to_body(message, meta) do
-    %{"message" => Map.put(meta, "body", message)}
+  def message_to_body(message, metadata) do
+    %{"message" => Map.put(metadata, "body", message)}
   end
 
   def exception_to_body(kind, value, stacktrace) do
@@ -93,11 +93,11 @@ defmodule Rollbax.Item do
     end
   end
 
-  defp put_custom(data, meta) do
-    if map_size(meta) == 0 do
+  defp put_custom(data, custom) do
+    if map_size(custom) == 0 do
       data
     else
-      Map.put(data, "custom", meta)
+      Map.put(data, "custom", custom)
     end
   end
 

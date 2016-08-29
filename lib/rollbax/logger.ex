@@ -81,19 +81,19 @@ defmodule Rollbax.Logger do
     {:ok, state}
   end
 
-  defp proceed?({Logger, _msg, _event_time, meta}) do
-    Keyword.get(meta, :rollbax, true)
+  defp proceed?({Logger, _message, _event_time, metadata}) do
+    Keyword.get(metadata, :rollbax, true)
   end
 
-  defp meet_level?(lvl, min) do
-    Logger.compare_levels(lvl, min) != :lt
+  defp meet_level?(level, min_level) do
+    Logger.compare_levels(level, min_level) != :lt
   end
 
-  defp post_event(level, {Logger, message, event_time, meta}, keys) do
+  defp post_event(level, {Logger, message, event_time, metadata}, keys) do
     event_unix_time = event_time_to_unix(event_time)
     message = message |> prune_chardata() |> IO.chardata_to_string()
-    meta = Keyword.take(meta, keys) |> Enum.into(%{})
-    body = Rollbax.Item.message_to_body(message, meta)
+    metadata = Keyword.take(metadata, keys) |> Enum.into(%{})
+    body = Rollbax.Item.message_to_body(message, metadata)
     Rollbax.Client.emit(level, event_unix_time, body, %{}, %{})
   end
 
