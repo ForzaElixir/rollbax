@@ -68,9 +68,9 @@ defmodule Rollbax.Logger do
     {:ok, state}
   end
 
-  def handle_event({level, _gl, event}, %{metadata: keys} = state) do
+  def handle_event({level, _gl, event}, %{metadata: keys, blacklist: blacklist} = state) do
     if proceed?(event) and meet_level?(level, state.level) do
-      post_event(level, event, keys)
+      post_event_unless_blacklisted(level, event, keys, blacklist)
     end
     {:ok, state}
   end
@@ -89,12 +89,14 @@ defmodule Rollbax.Logger do
     Logger.compare_levels(level, min_level) != :lt
   end
 
-  defp post_event(level, {Logger, message, event_time, metadata}, keys) do
+  defp post_event_unless_blacklisted(level, {Logger, message, event_time, metadata}, keys, blacklist) do
     event_unix_time = event_time_to_unix(event_time)
     message = message |> prune_chardata() |> IO.chardata_to_string()
-    metadata = Keyword.take(metadata, keys) |> Enum.into(%{})
-    body = Rollbax.Item.message_to_body(message, metadata)
-    Rollbax.Client.emit(level, event_unix_time, body, %{}, %{})
+    unless Enum.any?(blacklist, &(message =~ &1)) do
+      metadata = Keyword.take(metadata, keys) |> Enum.into(%{})
+      body = Rollbax.Item.message_to_body(message, metadata)
+      Rollbax.Client.emit(level, event_unix_time, body, %{}, %{})
+    end
   end
 
   defp configure(opts) do
@@ -104,7 +106,8 @@ defmodule Rollbax.Logger do
     Application.put_env(:logger, __MODULE__, config)
 
     %{level: Keyword.get(config, :level, :error),
-      metadata: Keyword.get(config, :metadata, [])}
+      metadata: Keyword.get(config, :metadata, []),
+      blacklist: Keyword.get(config, :blacklist, [])}
   end
 
   defp event_time_to_unix({{_, _, _} = date, {hour, min, sec, _millisec}}) do
