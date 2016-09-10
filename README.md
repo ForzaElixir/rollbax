@@ -60,15 +60,6 @@ config :logger,
 # We configure the Rollbax.Logger backend.
 config :logger, Rollbax.Logger,
   level: :error
-
-# If there are messages you don't want to be logged you can add a blacklist
-# using strings or regexes
-config :logger, Rollbax.Logger,
-  blacklist: [
-    ~r/[Rr]egex/,
-    "Some string",
-  ]
-
 ```
 
 Sending logged messages to Rollbar can be disabled via `Logger` metadata:
@@ -80,6 +71,8 @@ Logger.metadata(rollbar: false)
 # To disable reporting for the current logged message only:
 Logger.error("oops", rollbar: false)
 ```
+
+For more information, check out the documentation for [`Rollbax.Logger`](http://hexdocs.pm/rollbax/Rollbax.Logger.html).
 
 ### Plug and Phoenix
 

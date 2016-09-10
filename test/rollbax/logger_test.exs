@@ -33,6 +33,23 @@ defmodule Rollbax.LoggerTest do
     refute_receive {:api_request, _body}
   end
 
+  test ":blacklist option" do
+    Logger.configure_backend(Rollbax.Logger, blacklist: ["someone", ~r/\d{4}/])
+
+    capture_log(fn ->
+      Logger.error("my message")
+      Logger.error("someone else's message")
+      Logger.error("numbers are banned: 1234")
+    end)
+
+    assert_receive {:api_request, body}
+    assert body =~ "body\":\"my message"
+
+    refute_receive {:api_request, _body}
+  after
+    Logger.configure_backend(Rollbax.Logger, blacklist: [])
+  end
+
   test "endpoint is down" do
     :ok = RollbarAPI.stop
     capture_log(fn -> Logger.error("miss") end)

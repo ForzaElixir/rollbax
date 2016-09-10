@@ -24,6 +24,11 @@ defmodule Rollbax.Logger do
     * `:metadata` - (list of atoms) list of metadata to be attached to the
       reported message. These metadata will be showed alongside each
       "occurrence" of a given item in Rollbar. Defaults to `[]`.
+    * `:blacklist` - (list of regexps or strings) a list of patterns that allows
+      to avoid reporting messages that match one or more of these patterns. All
+      patterns will be tested against the logged message with the `=~` operator,
+      which in particular means that a string pattern will match if the logged
+      message contains it. Defaults to `[]` (so that no messages are blacklisted).
 
   These options can be configured under `Rollbax.Logger` in the configuration
   for the `:logger` application. For example, in `config/config.exs`:
