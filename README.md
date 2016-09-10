@@ -84,6 +84,14 @@ For non-production environments error reporting can be either disabled completel
 config :rollbax, enabled: :log
 ```
 
+## Contributing
+
+To run tests, run `$ mix test --no-start`. The `--no-start` bit is important so that tests don't fail (because of the `:rollbax` application being started without an `:access_token` specifically).
+
+When making changes to the code, adhere to this [Elixir style guide](https://github.com/lexmag/elixir-style-guide).
+
+Finally, thanks for contributing! :)
+
 ## License
 
 This software is licensed under [the ISC license](LICENSE).
