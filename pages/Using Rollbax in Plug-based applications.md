@@ -50,20 +50,28 @@ defp handle_errors(conn, %{kind: kind, reason: reason, stack: stacktrace}) do
 end
 ```
 
-#### Sensitive Data
+Check the [documentation for the Rollbar API](https://rollbar.com/docs/api/items_post/) for all the supported values that can form a "request".
 
-Due to the fact that ALL parameters are available to the controller, there is a possibility that sensitive data such as `password`/`password_confirmation` could be sent to Rollbar. The params should be scrubbed for any sensitive data before a request is made to Rollbar.
+## Sensitive data
 
-If you are using Phoenix, this can be accomplished by repurposing the `Phoenix.Logger` logic like so:
+In the examples above, *all* parameters are fetched from the connection and forwarded to Rollbar (in the `"params"` key); this means that any sensitive data such as passwords or authentication keys will be sent to Rollbar as well. A good idea may be to scrub any sensitive data out of the parameters before reporting errors to Rollbar. For example:
 
 ```elixir
-defp handle_errors(conn, _error) do
-  # ...
-  "params" => conn.params |> Phoenix.Logger.filter_values(Application.get_env(:phoenix, :filter_parameters))
-  # ...
+defp handle_errors(conn, error) do
+  conn =
+    conn
+    |> Plug.Conn.fetch_cookies()
+    |> Plug.Conn.fetch_query_params()
+
+  params =
+    for {key, _value} = tuple <- conn.params do
+      if key in ["password", "password_confirmation"] do
+        {key, "[FILTERED]"}
+      else
+        tuple
+      end
+    end
+
+  # Same as the examples above
 end
 ```
-
-This way, adding any more values in the future to the *config.exs* file for `:filter_parameters` will automatically be filtered out of the requests to Rollbar as well as the logs.
-
-Check the [documentation for the Rollbar API](https://rollbar.com/docs/api/items_post/) for all the supported values that can form a "request".
