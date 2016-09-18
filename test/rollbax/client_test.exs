@@ -4,7 +4,7 @@ defmodule Rollbax.ClientTest do
   alias Rollbax.Client
 
   setup_all do
-    {:ok, pid} = start_rollbax_client("token1", "test")
+    {:ok, pid} = start_rollbax_client("token1", "test", %{a: "custom_value"})
     on_exit(fn ->
       ensure_rollbax_client_down(pid)
     end)
@@ -23,6 +23,13 @@ defmodule Rollbax.ClientTest do
     assert body =~ ~s("level":"warn")
     assert body =~ ~s("body":"pass")
     assert body =~ ~s("foo":"bar")
+    assert body =~ ~s("a":"custom_value")
+  end
+
+  test "emit/5: custom values should take precendence over global ones" do
+    :ok = Client.emit(:warn, unix_time(), %{"message" => %{"body" => "pass"}}, _custom = %{a: "different_value", b: "also"}, %{})
+    assert_receive {:api_request, body}
+    assert Poison.decode!(body)["data"]["custom"] == %{"a" => "different_value", "b" => "also"}
   end
 
   test "mass sending" do

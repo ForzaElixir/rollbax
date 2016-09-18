@@ -22,8 +22,8 @@ defmodule Rollbax.Client do
 
   ## Public API
 
-  def start_link(token, environment, enabled, url \\ @api_url) do
-    state = new(token, environment, url, enabled)
+  def start_link(token, environment, enabled, custom, url \\ @api_url) do
+    state = new(token, environment, url, enabled, custom)
     GenServer.start_link(__MODULE__, state, [name: __MODULE__])
   end
 
@@ -87,8 +87,8 @@ defmodule Rollbax.Client do
 
   ## Helper functions
 
-  defp new(token, environment, url, enabled) do
-    draft = Item.draft(token, environment)
+  defp new(token, environment, url, enabled, custom) do
+    draft = Item.draft(token, environment, custom)
     %__MODULE__{draft: draft, url: url, enabled: enabled}
   end
 
