@@ -17,7 +17,8 @@ defmodule Rollbax.Item do
         "platform" => platform(),
         "notifier" => notifier()
       }
-    } |> put_custom(custom)
+    }
+    |> put_custom(custom)
   end
 
   def compose(draft, {level, timestamp, body, custom, occurrence_data}) do

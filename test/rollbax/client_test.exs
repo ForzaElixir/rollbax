@@ -16,7 +16,8 @@ defmodule Rollbax.ClientTest do
   end
 
   test "emit/5" do
-    :ok = Client.emit(:warn, unix_time(), %{"message" => %{"body" => "pass"}}, _custom = %{foo: "bar"}, %{})
+    custom = %{foo: "bar"}
+    :ok = Client.emit(:warn, unix_time(), %{"message" => %{"body" => "pass"}}, custom, %{})
     assert_receive {:api_request, body}
     assert body =~ ~s("access_token":"token1")
     assert body =~ ~s("environment":"test")
@@ -27,7 +28,8 @@ defmodule Rollbax.ClientTest do
   end
 
   test "emit/5: custom values should take precendence over global ones" do
-    :ok = Client.emit(:warn, unix_time(), %{"message" => %{"body" => "pass"}}, _custom = %{a: "different_value", b: "also"}, %{})
+    custom = %{a: "different_value", b: "also"}
+    :ok = Client.emit(:warn, unix_time(), %{"message" => %{"body" => "pass"}}, custom, %{})
     assert_receive {:api_request, body}
     assert Poison.decode!(body)["data"]["custom"] == %{"a" => "different_value", "b" => "also"}
   end
