@@ -25,6 +25,11 @@ defmodule Rollbax do
       are reported; if `false`, `Rollbax.report/5` is basically a no-op; if
       `:log`, exceptions reported with `Rollbax.report/5` are instead logged to
       the shell.
+    * `:custom` - (map) a map of any arbitrary metadata you want to attach to
+      every exception reported by Rollbax. If custom data is specified in an
+      individual call to `Rollbax.report/5` it will be merged with the global
+      data, with the individual data taking precedence in case of conflicts.
+      Defaults to `%{}`.
 
   The `:access_token` and `:environment` options accept a binary or a
   `{:system, "VAR_NAME"}` tuple. When given a tuple like `{:system, "VAR_NAME"}`,
@@ -44,12 +49,13 @@ defmodule Rollbax do
     import Supervisor.Spec
 
     enabled = get_config(:enabled, true)
+    custom  = get_config(:custom, %{})
 
     token = fetch_and_resolve_config(:access_token)
     envt  = fetch_and_resolve_config(:environment)
 
     children = [
-      worker(Rollbax.Client, [token, envt, enabled])
+      worker(Rollbax.Client, [token, envt, enabled, custom])
     ]
 
     Supervisor.start_link(children, strategy: :one_for_one)

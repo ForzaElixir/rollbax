@@ -5,7 +5,7 @@ defmodule Rollbax.Item do
   # Refer to https://rollbar.com/docs/api/items_post for documentation on such
   # payload.
 
-  def draft(token, environment) do
+  def draft(token, environment, custom) do
     %{
       "access_token" => token,
       "data" => %{
@@ -17,7 +17,7 @@ defmodule Rollbax.Item do
         "platform" => platform(),
         "notifier" => notifier()
       }
-    }
+    } |> put_custom(custom)
   end
 
   def compose(draft, {level, timestamp, body, custom, occurrence_data}) do
@@ -97,7 +97,7 @@ defmodule Rollbax.Item do
     if map_size(custom) == 0 do
       data
     else
-      Map.put(data, "custom", custom)
+      Map.update(data, "custom", custom, &Map.merge(&1, custom))
     end
   end
 

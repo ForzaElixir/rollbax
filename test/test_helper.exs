@@ -11,8 +11,8 @@ defmodule ExUnit.RollbaxCase do
     end
   end
 
-  def start_rollbax_client(token, env) do
-    Rollbax.Client.start_link(token, env, true, "http://localhost:4004")
+  def start_rollbax_client(token, env, custom \\ %{}) do
+    Rollbax.Client.start_link(token, env, true, custom, "http://localhost:4004")
   end
 
   def ensure_rollbax_client_down(pid) do
