@@ -24,7 +24,15 @@ defmodule Rollbax.LoggerTest do
       Logger.info("miss")
     end)
     assert_receive {:api_request, body}
-    assert body =~ "body\":\"test pass"
+    assert %{
+      "data" => %{
+        "body" => %{
+          "message" => %{
+            "body" => "test pass"
+          }
+        }
+      }
+    } = Poison.decode!(body)
     refute_receive {:api_request, _body}
   end
 
@@ -43,7 +51,15 @@ defmodule Rollbax.LoggerTest do
     end)
 
     assert_receive {:api_request, body}
-    assert body =~ "body\":\"my message"
+    assert %{
+      "data" => %{
+        "body" => %{
+          "message" => %{
+            "body" => "my message"
+          }
+        }
+      }
+    } = Poison.decode!(body)
 
     refute_receive {:api_request, _body}
   after
@@ -60,8 +76,16 @@ defmodule Rollbax.LoggerTest do
     Logger.configure_backend(Rollbax.Logger, metadata: [:foo])
     capture_log(fn -> Logger.error("pass", foo: "bar") end)
     assert_receive {:api_request, body}
-    assert body =~ ~s("body":"pass")
-    assert body =~ ~s("foo":"bar")
+    assert %{
+      "data" => %{
+        "body" => %{
+          "message" => %{
+            "body" => "pass",
+            "foo" => "bar"
+          }
+        }
+      }
+    } = Poison.decode!(body)
   end
 
   if Version.compare(System.version, "1.3.0-rc.1") != :lt do
@@ -69,6 +93,15 @@ defmodule Rollbax.LoggerTest do
       capture_log(fn -> Logger.error(["invalid:", ?\s, 1_000_000_000]) end)
       assert_receive {:api_request, body}
       assert body =~ ~s("body":"invalid: �")
+      assert %{
+        "data" => %{
+          "body" => %{
+            "message" => %{
+              "body" => "invalid: �"
+            }
+          }
+        }
+      } = Poison.decode!(body)
     end
   end
 end
