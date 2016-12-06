@@ -1,6 +1,9 @@
 # Changelog
 
-## v0.8.0-dev
+## v0.8.0
+
+* Fix a bug with custom data not being reported correctly
+* Bump Elixir requirement from ~> 1.0 to ~> 1.1
 
 ## v0.7.0
 
