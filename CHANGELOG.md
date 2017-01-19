@@ -1,5 +1,9 @@
 # Changelog
 
+## v0.8.1
+
+* Fix a bug when reporting a term that is not an exception and using kind `:error` in `Rollbax.report/5`.
+
 ## v0.8.0
 
 * Fix a bug with custom data not being reported correctly
