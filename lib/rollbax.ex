@@ -122,13 +122,6 @@ defmodule Rollbax do
   @spec report(:error | :exit | :throw, any, [any], map, map) :: :ok
   def report(kind, value, stacktrace, custom \\ %{}, occurrence_data \\ %{})
   when kind in [:error, :exit, :throw] and is_list(stacktrace) and is_map(custom) and is_map(occurrence_data) do
-    # We need this manual check here otherwise Exception.format_banner(:error,
-    # term) will assume that term is an Erlang error (it will say
-    # "** # (ErlangError) ...").
-    if kind == :error and not Exception.exception?(value) do
-      raise ArgumentError, "expected an exception when the kind is :error, got: #{value}"
-    end
-
     body = Rollbax.Item.exception_to_body(kind, value, stacktrace)
     Rollbax.Client.emit(:error, unix_time(), body, custom, occurrence_data)
   end
