@@ -28,6 +28,15 @@ defmodule RollbaxTest do
     refute body =~ ~s("custom")
   end
 
+  test "report/3 with an error that is not an exception" do
+    stacktrace = [{Test, :report, 2, [file: 'file.exs', line: 16]}]
+    error = {:badmap, nil}
+    :ok = Rollbax.report(:error, error, stacktrace, %{}, %{})
+    assert_receive {:api_request, body}
+    assert body =~ ~s("class":"BadMapError")
+    assert body =~ ~s("message":"expected a map, got: nil")
+  end
+
   test "report/3 with an exit" do
     stacktrace = [{Test, :report, 2, [file: 'file.exs', line: 16]}]
     :ok = Rollbax.report(:exit, :oops, stacktrace)

@@ -53,7 +53,8 @@ defmodule Rollbax.Item do
     %{"class" => "exit", "message" => Exception.format_exit(value)}
   end
 
-  defp exception(:error, exception) do
+  defp exception(:error, error) do
+    exception = Exception.normalize(:error, error)
     %{"class" => inspect(exception.__struct__), "message" => Exception.message(exception)}
   end
 
