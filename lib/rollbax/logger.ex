@@ -69,7 +69,7 @@ defmodule Rollbax.Logger do
   def handle_event(event, state)
 
   def handle_event({_level, gl, _event}, state)
-  when node(gl) != node() do
+      when node(gl) != node() do
     {:ok, state}
   end
 

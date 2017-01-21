@@ -126,7 +126,7 @@ defmodule Rollbax.Client do
   end
 
   defp handle_hackney_response(ref, body_chunk, %{hackney_responses: responses} = state)
-  when is_binary(body_chunk) do
+       when is_binary(body_chunk) do
     %{state | hackney_responses: Map.update!(responses, ref, &[&1 | body_chunk])}
   end
 
