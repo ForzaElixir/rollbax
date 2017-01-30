@@ -54,6 +54,10 @@ defmodule Rollbax do
     token = fetch_and_resolve_config(:access_token)
     envt  = fetch_and_resolve_config(:environment)
 
+    if get_config(:crash_reports, [])[:enabled] do
+      :error_logger.add_report_handler(Rollbax.Logger)
+    end
+
     children = [
       worker(Rollbax.Client, [token, envt, enabled, custom])
     ]
