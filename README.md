@@ -72,6 +72,32 @@ Logger.metadata(rollbar: false)
 Logger.error("oops", rollbar: false)
 ```
 
+You can customize a message template with `occurrence\_func` option.
+It lets you to set a custom fingerprint and group occurrences into an item.
+
+```elixir
+# In config
+config :logger, Rollbax.Logger,
+  occurrence_func: &MyCustomOccurrence.compute/2
+
+# In your project
+defmodule MyCustomOccurrence do
+  def compute(message, metadata) do
+    fingerprint =
+      if metadata[:file] && metadata[:line] do
+        "logger:#{metadata[:file]}:#{metadata[:line]}"
+      else
+        # No file/line => maybe OTP message? Let's group with first line
+        [first_line|_] = String.split(message, "\n")
+        "logger:#{first_line}"
+      end
+
+    %{"fingerprint" => :crypto.hash(:sha, fingerprint) |> Base.encode16}
+  end
+end
+
+```
+
 For more information, check out the documentation for [`Rollbax.Logger`](http://hexdocs.pm/rollbax/Rollbax.Logger.html).
 
 ### Plug and Phoenix
