@@ -64,14 +64,22 @@ defmodule Rollbax.LoggerTest do
     assert body =~ ~s("foo":"bar")
   end
 
-  defmodule CustomOccurrence do
-    def get(_message, _metadata) do
-      %{"fingerprint" => "uniqueforitem"}
-    end
-  end
-
   test "reporting with occurence_data" do
-    Logger.configure_backend(Rollbax.Logger, metadata: [:foo], occurrence_func: &CustomOccurrence.get/2)
+    Logger.configure_backend(
+      Rollbax.Logger,
+      metadata: [:foo], occurrence_func: &CustomOccurrence.compute/2
+    )
+    capture_log(fn -> Logger.error("hello") end)
+    assert_receive {:api_request, body}
+
+    payload = Poison.decode!(body)
+    assert payload["data"]["fingerprint"] == "uniqueforitem"
+
+    # Takes string too
+    Logger.configure_backend(
+      Rollbax.Logger,
+      metadata: [:foo], occurrence_func: "&CustomOccurrence.compute/2"
+    )
     capture_log(fn -> Logger.error("hello") end)
     assert_receive {:api_request, body}
 

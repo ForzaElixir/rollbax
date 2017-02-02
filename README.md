@@ -79,6 +79,8 @@ It lets you to set a custom fingerprint and group occurrences into an item.
 # In config
 config :logger, Rollbax.Logger,
   occurrence_func: &MyCustomOccurrence.compute/2
+  # Or pass string if you use Distillery or Exrm
+  occurrence_func: "&MyCustomOccurrence.compute/2"
 
 # In your project
 defmodule MyCustomOccurrence do

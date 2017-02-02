@@ -107,7 +107,12 @@ defmodule Rollbax.Logger do
 
   defp get_occurrence_data(message, metadata, nil), do: %{}
 
+  defp get_occurrence_data(message, metadata, func) when is_function(func) do
+    func.(message, metadata)
+  end
+
   defp get_occurrence_data(message, metadata, func) do
+    {func, _} = Code.eval_string(func)
     func.(message, metadata)
   end
 
