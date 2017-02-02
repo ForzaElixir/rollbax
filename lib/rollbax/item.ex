@@ -69,12 +69,12 @@ defmodule Rollbax.Item do
   end
 
   def stacktrace_entry_to_frame({module, fun, arity, location}) when is_integer(arity) do
-    %{"method" => Exception.format_mfa(module, fun, arity)}
+    %{"method" => format_mfa_and_app(module, fun, arity)}
     |> put_location(location)
   end
 
   def stacktrace_entry_to_frame({module, fun, arity, location}) when is_list(arity) do
-    %{"method" => Exception.format_mfa(module, fun, length(arity)), "args" => Enum.map(arity, &inspect/1)}
+    %{"method" => format_mfa_and_app(module, fun, length(arity)), "args" => Enum.map(arity, &inspect/1)}
     |> put_location(location)
   end
 
@@ -86,6 +86,16 @@ defmodule Rollbax.Item do
   def stacktrace_entry_to_frame({fun, arity, location}) when is_list(arity) do
     %{"method" => Exception.format_fa(fun, length(arity)), "args" => Enum.map(arity, &inspect/1)}
     |> put_location(location)
+  end
+
+  defp format_mfa_and_app(module, fun, arity) do
+    formatted = Exception.format_mfa(module, fun, arity)
+
+    if app = Application.get_application(module) do
+      formatted <> " (" <> Atom.to_string(app) <> ")"
+    else
+      formatted
+    end
   end
 
   defp put_location(frame, location) do

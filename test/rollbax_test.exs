@@ -78,4 +78,21 @@ defmodule RollbaxTest do
     assert body =~ ~s("method":"Test.report/2")
     refute body =~ ~s("custom")
   end
+
+  test "report/3 includes stacktraces in the function name if there's an application" do
+    # Let's use some modules that belong to an application and some that don't.
+    stacktrace = [
+      {:crypto, :strong_rand_bytes, 1, [file: 'crypto.erl', line: 1]},
+      {List, :to_string, 1, [file: 'list.ex', line: 10]},
+      {NoApp, :for_this_module, 3, [file: 'nofile.ex', line: 1]},
+    ]
+
+    :ok = Rollbax.report(:throw, :oops, stacktrace)
+
+    assert_receive {:api_request, body}
+
+    assert body =~ ~s["method":":crypto.strong_rand_bytes/1 (crypto)"]
+    assert body =~ ~s["method":"List.to_string/1 (elixir)"]
+    assert body =~ ~s["method":"NoApp.for_this_module/3"]
+  end
 end
