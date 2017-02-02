@@ -50,7 +50,13 @@ defmodule Rollbax.Item do
   end
 
   defp exception(:exit, value) do
-    %{"class" => "exit", "message" => Exception.format_exit(value)}
+    message =
+      if Exception.exception?(value) do
+        Exception.format_banner(:error, value)
+      else
+        Exception.format_exit(value)
+      end
+    %{"class" => "exit", "message" => message}
   end
 
   defp exception(:error, error) do

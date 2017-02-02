@@ -50,6 +50,22 @@ defmodule RollbaxTest do
     refute body =~ ~s("custom")
   end
 
+  test "report/3 with an exit where the term is an exception" do
+    stacktrace = [{Test, :report, 2, [file: 'file.exs', line: 16]}]
+    exception =
+      try do
+        raise "oops"
+      rescue
+        exception -> exception
+      end
+
+    :ok = Rollbax.report(:exit, exception, stacktrace, %{}, %{})
+
+    assert_receive {:api_request, body}
+    assert body =~ ~s["class":"exit"]
+    assert body =~ ~s["message":"** (RuntimeError) oops"]
+  end
+
   test "report/3 with a throw" do
     stacktrace = [{Test, :report, 2, [file: 'file.exs', line: 16]}]
     :ok = Rollbax.report(:throw, :oops, stacktrace)
