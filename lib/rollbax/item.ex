@@ -91,10 +91,11 @@ defmodule Rollbax.Item do
   defp format_mfa_and_app(module, fun, arity) do
     formatted = Exception.format_mfa(module, fun, arity)
 
-    if app = Application.get_application(module) do
-      formatted <> " (" <> Atom.to_string(app) <> ")"
-    else
-      formatted
+    case :application.get_application(module) do
+      {:ok, app} ->
+        formatted <> " (" <> Atom.to_string(app) <> ")"
+      :undefined ->
+        formatted
     end
   end
 
