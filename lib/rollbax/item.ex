@@ -69,13 +69,14 @@ defmodule Rollbax.Item do
   end
 
   def stacktrace_entry_to_frame({module, fun, arity, location}) when is_integer(arity) do
-    %{"method" => format_mfa_and_app(module, fun, arity)}
-    |> put_location(location)
+    method = Exception.format_mfa(module, fun, arity) <> maybe_format_application(module)
+    put_location(%{"method" => method}, location)
   end
 
   def stacktrace_entry_to_frame({module, fun, arity, location}) when is_list(arity) do
-    %{"method" => format_mfa_and_app(module, fun, length(arity)), "args" => Enum.map(arity, &inspect/1)}
-    |> put_location(location)
+    method = Exception.format_mfa(module, fun, arity) <> maybe_format_application(module)
+    args = Enum.map(arity, &inspect/1)
+    put_location(%{"method" => method, "args" => args}, location)
   end
 
   def stacktrace_entry_to_frame({fun, arity, location}) when is_integer(arity) do
@@ -88,14 +89,12 @@ defmodule Rollbax.Item do
     |> put_location(location)
   end
 
-  defp format_mfa_and_app(module, fun, arity) do
-    formatted = Exception.format_mfa(module, fun, arity)
-
+  defp maybe_format_application(module) do
     case :application.get_application(module) do
       {:ok, application} ->
-        formatted <> " (" <> Atom.to_string(application) <> ")"
+        " (" <> Atom.to_string(application) <> ")"
       :undefined ->
-        formatted
+        ""
     end
   end
 
