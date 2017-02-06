@@ -68,23 +68,23 @@ defmodule Rollbax.Item do
     Enum.map(stacktrace, &stacktrace_entry_to_frame/1)
   end
 
-  def stacktrace_entry_to_frame({module, fun, arity, location}) when is_integer(arity) do
+  defp stacktrace_entry_to_frame({module, fun, arity, location}) when is_integer(arity) do
     method = Exception.format_mfa(module, fun, arity) <> maybe_format_application(module)
     put_location(%{"method" => method}, location)
   end
 
-  def stacktrace_entry_to_frame({module, fun, arity, location}) when is_list(arity) do
+  defp stacktrace_entry_to_frame({module, fun, arity, location}) when is_list(arity) do
     method = Exception.format_mfa(module, fun, arity) <> maybe_format_application(module)
     args = Enum.map(arity, &inspect/1)
     put_location(%{"method" => method, "args" => args}, location)
   end
 
-  def stacktrace_entry_to_frame({fun, arity, location}) when is_integer(arity) do
+  defp stacktrace_entry_to_frame({fun, arity, location}) when is_integer(arity) do
     %{"method" => Exception.format_fa(fun, arity)}
     |> put_location(location)
   end
 
-  def stacktrace_entry_to_frame({fun, arity, location}) when is_list(arity) do
+  defp stacktrace_entry_to_frame({fun, arity, location}) when is_list(arity) do
     %{"method" => Exception.format_fa(fun, length(arity)), "args" => Enum.map(arity, &inspect/1)}
     |> put_location(location)
   end
