@@ -129,7 +129,19 @@ defmodule Rollbax do
            is_list(stacktrace) and
            is_map(custom) and
            is_map(occurrence_data) do
-    body = Rollbax.Item.exception_to_body(kind, value, stacktrace)
+    {class, message} = Rollbax.Item.exception_class_and_message(kind, value)
+    report_exception(class, message, stacktrace, custom, occurrence_data)
+  end
+
+  @doc false
+  @spec report_exception(String.t, String.t, [any], map, map) :: :ok
+  def report_exception(class, message, stacktrace, custom, occurrence_data)
+      when is_binary(class) and
+           is_binary(message) and
+           is_list(stacktrace) and
+           is_map(custom) and
+           is_map(occurrence_data) do
+    body = Rollbax.Item.exception_body(class, message, stacktrace)
     Rollbax.Client.emit(:error, unix_time(), body, custom, occurrence_data)
   end
 

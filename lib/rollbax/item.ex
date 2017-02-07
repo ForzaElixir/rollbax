@@ -32,36 +32,53 @@ defmodule Rollbax.Item do
     end)
   end
 
-  def message_to_body(message, metadata) do
-    %{"message" => Map.put(metadata, "body", message)}
-  end
+  @doc """
 
-  def exception_to_body(kind, value, stacktrace) do
+  Returns a map representing the body to be used for representing an "exception"
+  on Rollbar.
+
+  `class` and `message` are strings that will be used as the class and message
+  of the reported exception. `stacktrace` is the stacktrace of the error.
+  """
+  @spec exception_body(String.t, String.t, [any]) :: map
+  def exception_body(class, message, stacktrace) do
     %{
       "trace" => %{
         "frames" => stacktrace_to_frames(stacktrace),
-        "exception" => exception(kind, value),
+        "exception" => %{
+          "class" => class,
+          "message" => message,
+        },
       },
     }
   end
 
-  defp exception(:throw, value) do
-    %{"class" => "throw", "message" => inspect(value)}
+  @doc """
+  Returns the exception class and message for the given Elixir error.
+
+  `kind` can be one of `:throw`, `:exit`, or `:error`. A `{class, message}`
+  tuple is returned.
+  """
+  @spec exception_class_and_message(:throw | :exit | :error, any) :: {String.t, String.t}
+  def exception_class_and_message(kind, value)
+
+  def exception_class_and_message(:throw, value) do
+    {"throw", inspect(value)}
   end
 
-  defp exception(:exit, value) do
+  def exception_class_and_message(:exit, value) do
     message =
       if Exception.exception?(value) do
         Exception.format_banner(:error, value)
       else
         Exception.format_exit(value)
       end
-    %{"class" => "exit", "message" => message}
+    {"exit", message}
   end
 
-  defp exception(:error, error) do
+  def exception_class_and_message(:error, error) do
     exception = Exception.normalize(:error, error)
-    %{"class" => inspect(exception.__struct__), "message" => Exception.message(exception)}
+    {inspect(exception.__struct__), Exception.message(exception)}
   end
 
   defp stacktrace_to_frames(stacktrace) do
