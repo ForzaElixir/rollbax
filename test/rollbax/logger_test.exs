@@ -148,6 +148,50 @@ defmodule Rollbax.LoggerTest do
     purge_module(MyGenServer)
   end
 
+  test "gen_event terminating" do
+    defmodule Elixir.MyGenEventHandler do
+      @behaviour :gen_event
+
+      def init(state), do: {:ok, state}
+      def terminate(_reason, _state), do: :ok
+      def code_change(_old_vsn, state, _extra), do: {:ok, state}
+      def handle_call(_request, state), do: {:ok, :ok, state}
+      def handle_info(_message, state), do: {:ok, state}
+
+      def handle_event(:raise_error, state) do
+        raise "oops"
+        {:ok, state}
+      end
+    end
+
+    {:ok, manager} = :gen_event.start()
+    :ok = :gen_event.add_handler(manager, MyGenEventHandler, {})
+
+    capture_log(fn ->
+      :gen_event.notify(manager, :raise_error)
+
+      data = assert_performed_request()["data"]
+
+      # Check the exception.
+      assert data["body"]["trace"]["exception"] == %{
+        "class" => "gen_event handler terminating (RuntimeError)",
+        "message" => "oops",
+      }
+
+      assert [frame] = find_frames_for_current_file(data["body"]["trace"]["frames"])
+      assert frame["method"] == "MyGenEventHandler.handle_event/2"
+
+      assert data["custom"] == %{
+        "name" => "MyGenEventHandler",
+        "manager" => inspect(manager),
+        "last_message" => ":raise_error",
+        "state" => "{}",
+      }
+    end)
+  after
+    purge_module(MyGenEventHandler)
+  end
+
   test "process raising an error" do
     capture_log(fn ->
       pid = spawn(fn -> raise "oops" end)

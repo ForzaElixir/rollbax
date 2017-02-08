@@ -48,7 +48,7 @@ defmodule Rollbax.Logger do
 
   # Errors in a GenEvent handler.
   defp handle_error_format('** gen_event handler ' ++ _, [name, manager, last_message, state, reason]) do
-    {class, message, stacktrace} = format_as_exception(reason, "GenEvent handler terminating")
+    {class, message, stacktrace} = format_as_exception(reason, "gen_event handler terminating")
     custom = %{
       "name" => inspect(name),
       "manager" => inspect(manager),
