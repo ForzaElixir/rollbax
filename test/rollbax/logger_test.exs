@@ -1,74 +1,358 @@
 defmodule Rollbax.LoggerTest do
   use ExUnit.RollbaxCase
 
-  require Logger
-
   setup_all do
     {:ok, pid} = start_rollbax_client("token1", "test")
-    {:ok, _} = Logger.add_backend(Rollbax.Logger, flush: true)
+    :error_logger.add_report_handler(Rollbax.Logger)
+
     on_exit(fn ->
-      Logger.remove_backend(Rollbax.Logger, flush: true)
+      :error_logger.delete_report_handler(Rollbax.Logger)
       ensure_rollbax_client_down(pid)
     end)
   end
 
   setup do
-    {:ok, _} = RollbarAPI.start(self())
+    {:ok, _pid} = RollbarAPI.start(self())
     on_exit(&RollbarAPI.stop/0)
   end
 
-  test "level filtering" do
-    Logger.configure_backend(Rollbax.Logger, level: :error)
-    capture_log(fn ->
-      Logger.error(["test", ?\s, "pass"])
-      Logger.info("miss")
-    end)
-    assert_receive {:api_request, body}
-    assert body =~ "body\":\"test pass"
-    refute_receive {:api_request, _body}
-  end
+  test "GenServer terminating with an Elixir error" do
+    defmodule Elixir.MyGenServer do
+      use GenServer
 
-  test "using rollbax: false for disabling reporting to Rollbar" do
-    capture_log(fn -> Logger.error("miss", rollbax: false) end)
-    refute_receive {:api_request, _body}
-  end
-
-  test ":blacklist option" do
-    Logger.configure_backend(Rollbax.Logger, blacklist: ["someone", ~r/\d{4}/])
-
-    capture_log(fn ->
-      Logger.error("my message")
-      Logger.error("someone else's message")
-      Logger.error("numbers are banned: 1234")
-    end)
-
-    assert_receive {:api_request, body}
-    assert body =~ "body\":\"my message"
-
-    refute_receive {:api_request, _body}
-  after
-    Logger.configure_backend(Rollbax.Logger, blacklist: [])
-  end
-
-  test "endpoint is down" do
-    :ok = RollbarAPI.stop
-    capture_log(fn -> Logger.error("miss") end)
-    refute_receive {:api_request, _body}
-  end
-
-  test "reporting with metadata" do
-    Logger.configure_backend(Rollbax.Logger, metadata: [:foo])
-    capture_log(fn -> Logger.error("pass", foo: "bar") end)
-    assert_receive {:api_request, body}
-    assert body =~ ~s("body":"pass")
-    assert body =~ ~s("foo":"bar")
-  end
-
-  if Version.compare(System.version, "1.3.0-rc.1") != :lt do
-    test "logging a message that has invalid unicode codepoints" do
-      capture_log(fn -> Logger.error(["invalid:", ?\s, 1_000_000_000]) end)
-      assert_receive {:api_request, body}
-      assert body =~ ~s("body":"invalid: �")
+      def handle_cast(:raise_elixir, state) do
+        Map.fetch!(%{}, :nonexistent_key)
+        {:noreply, state}
+      end
     end
+
+    {:ok, gen_server} = GenServer.start(MyGenServer, {})
+
+    capture_log(fn ->
+      GenServer.cast(gen_server, :raise_elixir)
+    end)
+
+    data = assert_performed_request()["data"]
+
+    # Check the exception.
+    assert data["body"]["trace"]["exception"] == %{
+      "class" => "GenServer terminating (KeyError)",
+      "message" => "key :nonexistent_key not found in: %{}",
+    }
+
+    assert [frame] = find_frames_for_current_file(data["body"]["trace"]["frames"])
+    assert frame["method"] == "MyGenServer.handle_cast/2"
+
+    assert data["custom"]["last_message"] =~ "$gen_cast"
+    assert data["custom"]["name"] == inspect(gen_server)
+    assert data["custom"]["state"] == "{}"
+  after
+    purge_module(MyGenServer)
+  end
+
+  test "GenServer terminating with an Erlang error" do
+    defmodule Elixir.MyGenServer do
+      use GenServer
+
+      def handle_cast(:raise_erlang, state) do
+        :maps.find(:a_key, [:not_a, %{}])
+        {:noreply, state}
+      end
+    end
+
+    {:ok, gen_server} = GenServer.start(MyGenServer, {})
+
+    capture_log(fn ->
+      GenServer.cast(gen_server, :raise_erlang)
+    end)
+
+    data = assert_performed_request()["data"]
+
+    assert data["body"]["trace"]["exception"] == %{
+      "class" => "GenServer terminating (BadMapError)",
+      "message" => "expected a map, got: [:not_a, %{}]"
+    }
+
+    assert [frame] = find_frames_for_current_file(data["body"]["trace"]["frames"])
+    assert frame["method"] == "MyGenServer.handle_cast/2"
+
+    assert data["custom"]["last_message"] =~ "$gen_cast"
+    assert data["custom"]["name"] == inspect(gen_server)
+    assert data["custom"]["state"] == "{}"
+  after
+    purge_module(MyGenServer)
+  end
+
+  test "GenServer terminating because of an exit" do
+    defmodule Elixir.MyGenServer do
+      use GenServer
+
+      def handle_cast(:call_self, state) do
+        GenServer.call(self(), {:call, :self})
+        {:noreply, state}
+      end
+    end
+
+    {:ok, gen_server} = GenServer.start(MyGenServer, {})
+
+    capture_log(fn ->
+      GenServer.cast(gen_server, :call_self)
+    end)
+
+    data = assert_performed_request()["data"]
+
+    exception = data["body"]["trace"]["exception"]
+    assert exception["class"] == "GenServer terminating"
+    assert exception["message"] =~ "exited in: GenServer.call(#{inspect(gen_server)}"
+    assert exception["message"] =~ "process attempted to call itself"
+
+    assert [frame] = find_frames_for_current_file(data["body"]["trace"]["frames"])
+    assert frame["method"] == "MyGenServer.handle_cast/2"
+
+    assert data["custom"]["last_message"] =~ "$gen_cast"
+    assert data["custom"]["name"] == inspect(gen_server)
+    assert data["custom"]["state"] == "{}"
+  after
+    purge_module(MyGenServer)
+  end
+
+  test "GenServer stopping" do
+    defmodule Elixir.MyGenServer do
+      use GenServer
+
+      def handle_cast(:stop, state) do
+        {:stop, :stop_reason, state}
+      end
+    end
+
+    {:ok, gen_server} = GenServer.start(MyGenServer, {})
+
+    capture_log(fn ->
+      GenServer.cast(gen_server, :stop)
+    end)
+
+    data = assert_performed_request()["data"]
+
+    # Check the exception.
+    assert data["body"]["trace"]["exception"] == %{
+      "class" => "GenServer terminating (stop)",
+      "message" => ":stop_reason",
+    }
+
+    assert data["body"]["trace"]["frames"] == []
+
+    assert data["custom"]["last_message"] =~ "$gen_cast"
+    assert data["custom"]["name"] == inspect(gen_server)
+    assert data["custom"]["state"] == "{}"
+  after
+    purge_module(MyGenServer)
+  end
+
+  test "process raising an error" do
+    capture_log(fn ->
+      pid = spawn(fn -> raise "oops" end)
+
+      data = assert_performed_request()["data"]
+
+      assert data["body"]["trace"]["exception"] == %{
+        "class" => "error in process (RuntimeError)",
+        "message" => "oops",
+      }
+
+      assert [frame] = find_frames_for_current_file(data["body"]["trace"]["frames"])
+      assert frame["method"] == "anonymous fn/0 in Rollbax.LoggerTest.test process raising an error/1"
+
+      assert data["custom"] == %{"pid" => inspect(pid)}
+    end)
+  end
+
+  test "task with anonymous function raising an error" do
+    capture_log(fn ->
+      {:ok, task} = Task.start(fn -> raise "oops" end)
+
+      data = assert_performed_request()["data"]
+
+      assert data["body"]["trace"]["exception"] == %{
+        "class" => "Task terminating (RuntimeError)",
+        "message" => "oops",
+      }
+
+      assert [frame] = find_frames_for_current_file(data["body"]["trace"]["frames"])
+      assert frame["method"] == "anonymous fn/0 in Rollbax.LoggerTest.test task with anonymous function raising an error/1"
+
+      assert data["custom"]["name"] == inspect(task)
+      assert data["custom"]["function"] =~ ~r/\A#Function<.* in Rollbax\.LoggerTest/
+      assert data["custom"]["arguments"] == "[]"
+    end)
+  end
+
+  test "task with mfa raising an error" do
+    defmodule Elixir.MyModule do
+      def raise_error(message), do: raise(message)
+    end
+
+    capture_log(fn ->
+      {:ok, task} = Task.start(MyModule, :raise_error, ["my message"])
+
+      data = assert_performed_request()["data"]
+
+      assert data["body"]["trace"]["exception"] == %{
+        "class" => "Task terminating (RuntimeError)",
+        "message" => "my message",
+      }
+
+      assert [frame] = find_frames_for_current_file(data["body"]["trace"]["frames"])
+      assert frame["method"] == "MyModule.raise_error/1"
+
+      assert data["custom"] == %{
+        "name" => inspect(task),
+        "function" => "&MyModule.raise_error/1",
+        "arguments" => ~s(["my message"]),
+        "started_from" => inspect(self()),
+      }
+    end)
+  after
+    purge_module(MyModule)
+  end
+
+  test "gen_fsm terminating" do
+    defmodule Elixir.MyGenFsm do
+      @behaviour :gen_fsm
+      def init(data), do: {:ok, :idle, data}
+      def terminate(_reason, _state, _data), do: :ok
+      def code_change(_vsn, state, data, _extra), do: {:ok, state, data}
+      def handle_event(_event, state, data), do: {:next_state, state, data}
+      def handle_sync_event(_event, _from, state, data), do: {:next_state, state, data}
+      def handle_info(_message, state, data), do: {:next_state, state, data}
+
+      def idle(:error, state) do
+        :maps.find(:a_key, _not_a_map = [])
+        {:next_state, :idle, state}
+      end
+    end
+
+    capture_log(fn ->
+      {:ok, gen_fsm} = :gen_fsm.start(MyGenFsm, {}, _opts = [])
+
+      :gen_fsm.send_event(gen_fsm, :error)
+
+      data = assert_performed_request()["data"]
+
+      # Check the exception.
+      assert data["body"]["trace"]["exception"] == %{
+        "class" => "State machine terminating (BadMapError)",
+        "message" => "expected a map, got: []",
+      }
+
+      assert [frame] = find_frames_for_current_file(data["body"]["trace"]["frames"])
+      assert frame["method"] == "MyGenFsm.idle/2"
+
+      assert data["custom"] == %{
+        "last_event" => ":error",
+        "name" => inspect(gen_fsm),
+        "state" => ":idle",
+        "data" => "{}",
+      }
+    end)
+  after
+    purge_module(MyGenFsm)
+  end
+
+  if Code.ensure_loaded?(:gen_statem) do
+    test "gen_statem terminating" do
+      defmodule Elixir.MyGenStatem do
+        @behaviour :gen_statem
+        def terminate(_reason, _state, _data), do: :ignored
+        def code_change(_vsn, state, data, _extra), do: {:ok, state, data}
+        def init(data), do: {:ok, :idle, data}
+        def callback_mode(), do: :state_functions
+
+        def idle(:cast, :exit, data) do
+          exit(:exiting)
+          {:keep_state, data}
+        end
+
+        def idle(:cast, :error, data) do
+          Map.fetch!(%{}, :nonexistent_key)
+          {:keep_state, data}
+        end
+      end
+
+      # First, we test exits.
+      {:ok, gen_statem} = :gen_statem.start(MyGenStatem, {}, _opts = [])
+
+      capture_log(fn ->
+        :gen_statem.cast(gen_statem, :exit)
+
+        data = assert_performed_request()["data"]
+
+        # Check the exception.
+        assert data["body"]["trace"]["exception"] == %{
+          "class" => "State machine terminating (exit)",
+          "message" => ":exiting",
+        }
+
+        assert [frame] = find_frames_for_current_file(data["body"]["trace"]["frames"])
+        assert frame["method"] == "MyGenStatem.idle/3"
+
+        assert data["custom"] == %{
+          "callback_mode" => ":state_functions",
+          "last_event" => "{:cast, :exit}",
+          "name" => inspect(gen_statem),
+          "server_state" => "{:idle, {}}",
+        }
+      end)
+
+      # Then, we test errors.
+      {:ok, gen_statem} = :gen_statem.start(MyGenStatem, {}, _opts = [])
+
+      capture_log(fn ->
+        :gen_statem.cast(gen_statem, :error)
+
+        data = assert_performed_request()["data"]
+
+        # Check the exception.
+        assert data["body"]["trace"]["exception"] == %{
+          "class" => "State machine terminating (KeyError)",
+          "message" => "key :nonexistent_key not found in: %{}",
+        }
+
+        assert [frame] = find_frames_for_current_file(data["body"]["trace"]["frames"])
+        assert frame["method"] == "MyGenStatem.idle/3"
+
+        assert data["custom"] == %{
+          "callback_mode" => ":state_functions",
+          "last_event" => "{:cast, :error}",
+          "name" => inspect(gen_statem),
+          "server_state" => "{:idle, {}}",
+        }
+      end)
+    after
+      purge_module(MyGenStatem)
+    end
+  end
+
+  test "when the endpoint is down, no logs are reported" do
+    :ok = RollbarAPI.stop
+
+    capture_log(fn ->
+      spawn(fn -> raise "oops" end)
+      refute_receive {:api_request, _body}
+    end)
+  end
+
+  defp assert_performed_request() do
+    assert_receive {:api_request, body}
+    Poison.decode!(body)
+  end
+
+  defp find_frames_for_current_file(frames) do
+    current_file = Path.relative_to_cwd(__ENV__.file)
+    Enum.filter(frames, &(&1["filename"] == current_file))
+  end
+
+  defp purge_module(module) do
+    :code.delete(module)
+    :code.purge(module)
   end
 end
