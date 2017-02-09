@@ -71,9 +71,8 @@ defmodule Rollbax.Logger do
   end
 
   defp handle_error_format('** State machine ' ++ _ = message, data) do
-    message = List.to_string(message)
-    if String.contains?(message, "Callback mode") do
-      handle_gen_statem_error(data)
+    if charlist_contains?(message, 'Callback mode') do
+      handle_gen_statem_error(message, data)
     else
       handle_gen_fsm_error(data)
     end
@@ -97,8 +96,17 @@ defmodule Rollbax.Logger do
     :ok
   end
 
-  defp handle_gen_statem_error([name, last_event, server_state, reason_kind, reason, callback_mode, stacktrace]) do
-    {class, message} =
+  defp handle_gen_statem_error(message, [_name | data] = whole_data) do
+    data =
+      if charlist_contains?(message, 'Last event') do
+        tl(data)
+      else
+        data
+      end
+
+    [_server_state, reason_kind, reason | _rest] = data
+
+    {exc_class, exc_message} =
       case {reason_kind, reason} do
         {:error, reason} ->
           exception = Exception.normalize(:error, reason)
@@ -107,14 +115,49 @@ defmodule Rollbax.Logger do
           {"State machine terminating (exit)", Exception.format_exit(reason)}
       end
 
-    custom = %{
-      "name" => inspect(name),
-      "last_event" => inspect(last_event),
-      "server_state" => inspect(server_state),
-      "callback_mode" => inspect(callback_mode),
-    }
+    stacktrace =
+      if charlist_contains?(message, 'Stacktrace') do
+        List.last(data)
+      else
+        []
+      end
 
-    Rollbax.report_exception(class, message, stacktrace, custom, _occurrence_data = %{})
+    custom = gen_statem_custom(message, whole_data, %{})
+
+    Rollbax.report_exception(exc_class, exc_message, stacktrace, custom, _occurrence_data = %{})
+  end
+
+  defp gen_statem_custom('** State machine ~p terminating~n' ++ rest, [name | data], custom) do
+    gen_statem_custom(rest, data, Map.put(custom, "name", inspect(name)))
+  end
+
+  defp gen_statem_custom('** Last event = ~p~n' ++ rest, [last_event | data], custom) do
+    gen_statem_custom(rest, data, Map.put(custom, "last_event", inspect(last_event)))
+  end
+
+  defp gen_statem_custom('** When server state  = ~p~n' ++ rest, [server_state | data], custom) do
+    gen_statem_custom(rest, data, Map.put(custom, "server_state", inspect(server_state)))
+  end
+
+  # We ignore this as it's reported in the error.
+  defp gen_statem_custom('** Reason for termination = ~w:~p~n' ++ rest, [_reason_kind, _reason | data], custom) do
+    gen_statem_custom(rest, data, custom)
+  end
+
+  defp gen_statem_custom('** Callback mode = ~p~n' ++ rest, [callback_mode | data], custom) do
+    gen_statem_custom(rest, data, Map.put(custom, "callback_mode", inspect(callback_mode)))
+  end
+
+  defp gen_statem_custom('** Queued = ~p~n' ++ rest, [queued_messages | data], custom) do
+    gen_statem_custom(rest, data, Map.put(custom, "queued_messages", inspect(queued_messages)))
+  end
+
+  defp gen_statem_custom('** Postponed = ~p~n' ++ rest, [postponed_messages | data], custom) do
+    gen_statem_custom(rest, data, Map.put(custom, "postponed_messages", inspect(postponed_messages)))
+  end
+
+  defp gen_statem_custom(_other, _data, custom) do
+    custom
   end
 
   defp handle_gen_fsm_error([name, last_event, state, data, reason]) do
@@ -126,6 +169,10 @@ defmodule Rollbax.Logger do
       "data" => inspect(data),
     }
     Rollbax.report_exception(class, message, stacktrace, custom, _occurrence_data = %{})
+  end
+
+  defp handle_gen_fsm_error(data) do
+    Logger.warn "Couldn't parse gen_fsm crash data: #{inspect(data)}"
   end
 
   defp format_as_exception({maybe_exception, [_ | _] = maybe_stacktrace} = reason, class) do
@@ -161,5 +208,9 @@ defmodule Rollbax.Logger do
         class = class <> " (" <> inspect(exception.__struct__) <> ")"
         {class, Exception.message(exception), stacktrace}
     end
+  end
+
+  defp charlist_contains?(charlist, part) do
+    :string.str(charlist, part) != 0
   end
 end
