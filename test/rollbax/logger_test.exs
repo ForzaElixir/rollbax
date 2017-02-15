@@ -3,17 +3,22 @@ defmodule Rollbax.LoggerTest do
 
   setup_all do
     {:ok, pid} = start_rollbax_client("token1", "test")
-    :error_logger.add_report_handler(Rollbax.Logger)
 
     on_exit(fn ->
-      :error_logger.delete_report_handler(Rollbax.Logger)
       ensure_rollbax_client_down(pid)
     end)
   end
 
-  setup do
+  setup context do
     {:ok, _pid} = RollbarAPI.start(self())
-    on_exit(&RollbarAPI.stop/0)
+
+    Application.put_env(:rollbax, :reporters, context[:reporters] || [])
+    :error_logger.add_report_handler(Rollbax.Logger)
+
+    on_exit(fn ->
+      RollbarAPI.stop()
+      :error_logger.delete_report_handler(Rollbax.Logger)
+    end)
   end
 
   test "GenServer terminating with an Elixir error" do
@@ -379,6 +384,22 @@ defmodule Rollbax.LoggerTest do
   test "when the endpoint is down, no logs are reported" do
     :ok = RollbarAPI.stop
 
+    capture_log(fn ->
+      spawn(fn -> raise "oops" end)
+      refute_receive {:api_request, _body}
+    end)
+  end
+
+  defmodule SilencerReporter do
+    @behaviour Rollbax.Reporter
+
+    def handle_event(_type, _event) do
+      :dont_report
+    end
+  end
+
+  @tag reporters: [SilencerReporter]
+  test "reporters can skip events" do
     capture_log(fn ->
       spawn(fn -> raise "oops" end)
       refute_receive {:api_request, _body}
