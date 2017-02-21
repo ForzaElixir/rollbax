@@ -12,7 +12,12 @@ defmodule Rollbax.LoggerTest do
   setup context do
     {:ok, _pid} = RollbarAPI.start(self())
 
-    Application.put_env(:rollbax, :reporters, context[:reporters] || [])
+    if reporters = context[:reporters] do
+      Application.put_env(:rollbax, :reporters, reporters)
+    else
+      Application.delete_env(:rollbax, :reporters)
+    end
+
     :error_logger.add_report_handler(Rollbax.Logger)
 
     on_exit(fn ->
@@ -307,80 +312,6 @@ defmodule Rollbax.LoggerTest do
     purge_module(MyGenFsm)
   end
 
-  if Code.ensure_loaded?(:gen_statem) do
-    test "gen_statem terminating" do
-      defmodule Elixir.MyGenStatem do
-        @behaviour :gen_statem
-        def terminate(_reason, _state, _data), do: :ignored
-        def code_change(_vsn, state, data, _extra), do: {:ok, state, data}
-        def init(data), do: {:ok, :idle, data}
-        def callback_mode(), do: :state_functions
-
-        def idle(:cast, :exit, data) do
-          exit(:exiting)
-          {:keep_state, data}
-        end
-
-        def idle(:cast, :error, data) do
-          Map.fetch!(%{}, :nonexistent_key)
-          {:keep_state, data}
-        end
-      end
-
-      # First, we test exits.
-      {:ok, gen_statem} = :gen_statem.start(MyGenStatem, {}, _opts = [])
-
-      capture_log(fn ->
-        :gen_statem.cast(gen_statem, :exit)
-
-        data = assert_performed_request()["data"]
-
-        # Check the exception.
-        assert data["body"]["trace"]["exception"] == %{
-          "class" => "State machine terminating (exit)",
-          "message" => ":exiting",
-        }
-
-        assert [frame] = find_frames_for_current_file(data["body"]["trace"]["frames"])
-        assert frame["method"] == "MyGenStatem.idle/3"
-
-        assert data["custom"] == %{
-          "callback_mode" => ":state_functions",
-          "last_event" => "{:cast, :exit}",
-          "name" => inspect(gen_statem),
-          "server_state" => "{:idle, {}}",
-        }
-      end)
-
-      # Then, we test errors.
-      {:ok, gen_statem} = :gen_statem.start(MyGenStatem, {}, _opts = [])
-
-      capture_log(fn ->
-        :gen_statem.cast(gen_statem, :error)
-
-        data = assert_performed_request()["data"]
-
-        # Check the exception.
-        assert data["body"]["trace"]["exception"] == %{
-          "class" => "State machine terminating (KeyError)",
-          "message" => "key :nonexistent_key not found in: %{}",
-        }
-
-        assert [frame] = find_frames_for_current_file(data["body"]["trace"]["frames"])
-        assert frame["method"] == "MyGenStatem.idle/3"
-
-        assert data["custom"] == %{
-          "callback_mode" => ":state_functions",
-          "last_event" => "{:cast, :error}",
-          "name" => inspect(gen_statem),
-          "server_state" => "{:idle, {}}",
-        }
-      end)
-    after
-      purge_module(MyGenStatem)
-    end
-  end
-
   test "when the endpoint is down, no logs are reported" do
     :ok = RollbarAPI.stop
 
@@ -390,20 +321,38 @@ defmodule Rollbax.LoggerTest do
     end)
   end
 
-  defmodule SilencerReporter do
-    @behaviour Rollbax.Reporter
-
-    def handle_event(_type, _event) do
-      :dont_report
-    end
-  end
-
-  @tag reporters: [SilencerReporter]
+  @tag reporters: [Rollbax.Reporter.Silencing]
   test "reporters can skip events" do
     capture_log(fn ->
       spawn(fn -> raise "oops" end)
       refute_receive {:api_request, _body}
     end)
+  end
+
+  @tag reporters: []
+  test "if no reporters are provided, events are reported as messages, not exceptions" do
+    defmodule Elixir.MyGenServer do
+      use GenServer
+
+      def handle_cast(:stop, state) do
+        raise "oops"
+        {:noreply, state}
+      end
+    end
+
+    {:ok, gen_server} = GenServer.start(MyGenServer, {})
+
+    capture_log(fn ->
+      GenServer.cast(gen_server, :stop)
+      data = assert_performed_request()["data"]
+
+      message = data["body"]["message"]
+      assert message["body"] =~ ~r/GenServer #PID<.*> terminating/
+      assert message["body"] =~ "(RuntimeError) oops"
+      assert message["body"] =~ "MyGenServer.handle_cast/2"
+    end)
+  after
+    purge_module(MyGenServer)
   end
 
   defp assert_performed_request() do

@@ -33,7 +33,6 @@ defmodule Rollbax.Item do
   end
 
   @doc """
-
   Returns a map representing the body to be used for representing an "exception"
   on Rollbar.
 
@@ -51,6 +50,15 @@ defmodule Rollbax.Item do
         },
       },
     }
+  end
+
+  @doc """
+  Returns a map representing the body to be used for representing a "message" on
+  Rollbar.
+  """
+  @spec message_body(String.t) :: map
+  def message_body(message) do
+    %{"message" => %{"body" => message}}
   end
 
   @doc """
