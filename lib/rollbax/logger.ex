@@ -53,7 +53,7 @@ defmodule Rollbax.Logger do
     case reporter.handle_event(level, event) do
       %Rollbax.Exception{} = exception ->
         Rollbax.report_exception(exception)
-      :skip ->
+      :next ->
         run_reporters(rest, level, event)
       :ignore ->
         :ok
@@ -102,7 +102,7 @@ defmodule Rollbax.Logger do
   defp translate([{mod, fun} | rest] = _translators, level, kind, data, truncate) do
     case apply(mod, fun, [_min_level = :error, level, kind, data]) do
       {:ok, _chardata} = result -> result
-      :skip -> :skip
+      :next -> :next
       :none -> translate(rest, level, kind, data, truncate)
     end
   end

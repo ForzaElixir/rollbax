@@ -8,7 +8,7 @@ defmodule Rollbax.Reporter.Standard do
   end
 
   def handle_event(_type, _event) do
-    :skip
+    :next
   end
 
   # Errors in a GenServer.
@@ -63,7 +63,7 @@ defmodule Rollbax.Reporter.Standard do
 
   defp handle_error_format('** State machine ' ++ _ = message, data) do
     if charlist_contains?(message, 'Callback mode') do
-      :skip
+      :next
     else
       handle_gen_fsm_error(data)
     end
@@ -86,7 +86,7 @@ defmodule Rollbax.Reporter.Standard do
   # Any other error (for example, the ones logged through
   # :error_logger.error_msg/1). This reporter doesn't report those to Rollbar.
   defp handle_error_format(_format, _data) do
-    :skip
+    :next
   end
 
   defp handle_gen_fsm_error([name, last_event, state, data, reason]) do
@@ -106,7 +106,7 @@ defmodule Rollbax.Reporter.Standard do
   end
 
   defp handle_gen_fsm_error(_data) do
-    :skip
+    :next
   end
 
   defp format_as_exception({maybe_exception, [_ | _] = maybe_stacktrace} = reason, class) do
