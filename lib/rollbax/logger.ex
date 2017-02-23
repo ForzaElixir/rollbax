@@ -64,57 +64,25 @@ defmodule Rollbax.Logger do
   # as a Rollbar "message" with the same logic that Logger uses to translate
   # messages (so that it will have Elixir syntax when reported).
   defp run_reporters([], level, event) do
-    config =
-      Application.get_all_env(:logger)
-      |> Keyword.take([:handle_sasl_reports, :handle_otp_reports, :translators, :truncate])
-      |> Enum.into(%{})
+    if message = format_event(level, event) do
+      body =
+        message
+        |> IO.chardata_to_string()
+        |> Rollbax.Item.message_body()
 
-    if message = build_message(level, event, config) do
-      body = message |> IO.chardata_to_string() |> Rollbax.Item.message_body()
       Rollbax.Client.emit(:error, current_timestamp(), body, %{}, %{})
-    else
-      :ok
     end
+
+    :ok
   end
 
-  defp build_message(:error, {_pid, format, data}, %{handle_otp_reports: true} = config),
-    do: build_message(:error, :format, {format, data}, config)
-  defp build_message(:error_report, {_pid, :std_error, format}, %{handle_otp_reports: true} = config),
-    do: build_message(:error, :report, {:std_error, format}, config)
-  defp build_message(:error_report, {_pid, :supervisor_report, data}, %{handle_sasl_reports: true} = config),
-    do: build_message(:error, :report, {:supervisor_report, data}, config)
-  defp build_message(:error_report, {_pid, :crash_report, data}, %{handle_sasl_reports: true} = config),
-    do: build_message(:error, :report, {:crash_report, data}, config)
-  defp build_message(_level, _event, _config),
+  defp format_event(:error, {_pid, format, args}),
+    do: :io_lib.format(format, args)
+  defp format_event(:error_report, {_pid, type, format})
+       when type in [:std_error, :supervisor_report, :crash_report],
+    do: inspect(format)
+  defp format_event(_type, _data),
     do: nil
-
-  defp build_message(level, kind, data, config) do
-    %{translators: translators, truncate: truncate} = config
-
-    case translate(translators, level, kind, data, truncate) do
-      {:ok, message} ->
-        Logger.Utils.truncate(message, truncate)
-      _other ->
-        nil
-    end
-  end
-
-  defp translate([{mod, fun} | rest] = _translators, level, kind, data, truncate) do
-    case apply(mod, fun, [_min_level = :error, level, kind, data]) do
-      {:ok, _chardata} = result -> result
-      :next -> :next
-      :none -> translate(rest, level, kind, data, truncate)
-    end
-  end
-
-  defp translate([], _level, :format, {format, args}, truncate) do
-    {format, args} = Logger.Utils.inspect(format, args, truncate)
-    {:ok, :io_lib.format(format, args)}
-  end
-
-  defp translate([], _level, :report, {_type, data}, _truncate) do
-    {:ok, Kernel.inspect(data)}
-  end
 
   defp current_timestamp() do
     :calendar.datetime_to_gregorian_seconds(:calendar.universal_time()) - @unix_epoch

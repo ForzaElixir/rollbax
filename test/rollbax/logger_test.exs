@@ -347,9 +347,9 @@ defmodule Rollbax.LoggerTest do
       data = assert_performed_request()["data"]
 
       message = data["body"]["message"]
-      assert message["body"] =~ ~r/GenServer #PID<.*> terminating/
-      assert message["body"] =~ "(RuntimeError) oops"
-      assert message["body"] =~ "MyGenServer.handle_cast/2"
+      assert message["body"] =~ ~r/Generic server <.*> terminating/
+      assert message["body"] =~ "'Elixir.RuntimeError'"
+      assert message["body"] =~ "<<\"oops\">>"
     end)
   after
     purge_module(MyGenServer)
