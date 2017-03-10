@@ -25,7 +25,7 @@ defmodule Rollbax.Mixfile do
   end
 
   defp deps() do
-    [{:hackney, "~> 1.1"},
+    [{:hackney, "~> 1.7"},
      {:poison,  "~> 1.4 or ~> 2.0 or ~> 3.0"},
 
      {:ex_doc, ">= 0.0.0", only: :docs},
