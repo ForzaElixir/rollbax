@@ -63,6 +63,22 @@ defmodule Rollbax.ClientTest do
     assert log =~ ~s{[error] (Rollbax) API returned an error: "that was a bad request"}
   end
 
+  test "invalid item failure" do
+    log = capture_log(fn ->
+      :ok = Client.emit(:error, unix_time(), %{"message" => %{"body" => <<208>>}}, %{}, %{})
+      refute_receive {:api_request, _body}
+    end)
+
+    assert log =~ "[error] (Rollbax) failed to encode report below for reason: unable to encode value: <<208>>"
+    assert log =~ ~r"""
+    %{"message" => %{"body" => <<208>>}}
+    Level: error
+    Timestamp: \d+
+    Custom data: %{}
+    Occurrence data: %{}
+    """
+  end
+
   defp unix_time() do
     {mgsec, sec, _usec} = :os.timestamp()
     mgsec * 1_000_000 + sec

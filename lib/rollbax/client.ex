@@ -53,24 +53,27 @@ defmodule Rollbax.Client do
   end
 
   def handle_cast({:emit, event}, %{enabled: :log} = state) do
-    {level, timestamp, body, custom, occurrence_data} = event
     Logger.info [
-      "(Rollbax) registered report:", ?\n, inspect(body),
-      "\n          Level: ", level,
-      "\n      Timestamp: ", Integer.to_string(timestamp),
-      "\n    Custom data: ", inspect(custom),
-      "\nOccurrence data: ", inspect(occurrence_data),
+      "(Rollbax) registered report.\n", event_to_chardata(event),
     ]
     {:noreply, state}
   end
 
   def handle_cast({:emit, event}, %{enabled: true} = state) do
-    payload = compose_json(state.draft, event)
-    opts = [:async, pool: __MODULE__]
-    case :hackney.post(state.url, @headers, payload, opts) do
-      {:ok, _ref} -> :ok
-      {:error, reason} ->
-        Logger.error("(Rollbax) connection error: #{inspect(reason)}")
+    case compose_json(state.draft, event) do
+      {:ok, payload} ->
+        opts = [:async, pool: __MODULE__]
+        case :hackney.post(state.url, @headers, payload, opts) do
+          {:ok, _ref} -> :ok
+          {:error, reason} ->
+            Logger.error("(Rollbax) connection error: #{inspect(reason)}")
+        end
+      {:error, exception} ->
+        Logger.error [
+          "(Rollbax) failed to encode report below ",
+          "for reason: ", Exception.message(exception),
+          ?\n, event_to_chardata(event),
+        ]
     end
     {:noreply, state}
   end
@@ -93,8 +96,25 @@ defmodule Rollbax.Client do
   end
 
   defp compose_json(draft, event) do
-    Item.compose(draft, event)
-    |> Poison.encode!(iodata: true)
+    item = Item.compose(draft, event)
+    # We use `try/1` here instead of `Poison.decode/1`
+    # since under some circumstances it
+    # still unsafe and will raise an exception.
+    try do
+      {:ok, Poison.encode!(item, iodata: true)}
+    rescue
+      exception -> {:error, exception}
+    end
+  end
+
+  defp event_to_chardata({level, timestamp, body, custom, occurrence_data}) do
+    [
+      inspect(body),
+      "\nLevel: ", level,
+      "\nTimestamp: ", Integer.to_string(timestamp),
+      "\nCustom data: ", inspect(custom),
+      "\nOccurrence data: ", inspect(occurrence_data),
+    ]
   end
 
   defp handle_hackney_response(ref, :done, %{hackney_responses: responses} = state) do
