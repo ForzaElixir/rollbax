@@ -1,13 +1,19 @@
 # Changelog
 
+## v0.8.2
+
+* Made sure that JSON encoding never cause `Rollbax.Client` crashing.
+* Improved formatting of stacktraces, and exceptions reported as exits.
+* Fixed a possible infinite loop when a report is send while `Rollbax.Client` is not available.
+
 ## v0.8.1
 
-* Fix a bug when reporting a term that is not an exception and using kind `:error` in `Rollbax.report/5`.
+* Fixed a bug when reporting a term that is not an exception and using kind `:error` in `Rollbax.report/5`.
 
 ## v0.8.0
 
-* Fix a bug with custom data not being reported correctly
-* Bump Elixir requirement from ~> 1.0 to ~> 1.1
+* Fixed a bug with custom data not being reported correctly.
+* Bumped Elixir requirement from ~> 1.0 to ~> 1.1.
 
 ## v0.7.0
 
@@ -16,7 +22,7 @@
 
 ## v0.6.1
 
-* Fixed a bug involving invalid unicode codepoints in `Rollbax.Logger`
+* Fixed a bug involving invalid unicode codepoints in `Rollbax.Logger`.
 
 ## v0.6.0
 
