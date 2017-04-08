@@ -26,12 +26,11 @@ defmodule Rollbax.Mixfile do
 
   defp deps() do
     [{:hackney, "~> 1.1"},
-     {:poison,  "~> 1.4 or ~> 2.0 or ~> 3.0"},
+     {:poison, "~> 1.4 or ~> 2.0 or ~> 3.0"},
 
-     {:ex_doc, ">= 0.0.0", only: :docs},
-     {:earmark, ">= 0.0.0", only: :docs},
+     {:ex_doc, "~> 0.14", only: :dev},
 
-     {:plug,   "~> 1.0.0", only: :test},
+     {:plug, "~> 1.0.0", only: :test},
      {:cowboy, "~> 1.0.0", only: :test}]
   end
 
