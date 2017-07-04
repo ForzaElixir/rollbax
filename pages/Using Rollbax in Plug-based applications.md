@@ -34,7 +34,7 @@ defp handle_errors(conn, %{kind: kind, reason: reason, stack: stacktrace}) do
     "request" => %{
       "cookies" => conn.req_cookies,
       "url" => "#{conn.scheme}://#{conn.host}:#{conn.port}#{conn.request_path}",
-      "user_ip" => (conn.remote_ip |> Tuple.to_list() |> Enum.join(".")),
+      "user_ip" => :inet_parse.ntoa(conn.remote_ip),
       "headers" => Enum.into(conn.req_headers, %{}),
       "params" => conn.params,
       "method" => conn.method,
