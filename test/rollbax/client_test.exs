@@ -19,19 +19,35 @@ defmodule Rollbax.ClientTest do
     custom = %{foo: "bar"}
     :ok = Client.emit(:warn, unix_time(), %{"message" => %{"body" => "pass"}}, custom, %{})
     assert_receive {:api_request, body}
-    assert body =~ ~s("access_token":"token1")
-    assert body =~ ~s("environment":"test")
-    assert body =~ ~s("level":"warn")
-    assert body =~ ~s("body":"pass")
-    assert body =~ ~s("foo":"bar")
-    assert body =~ ~s("qux":"custom")
+    assert %{
+      "access_token" => "token1",
+      "data" => %{
+        "body" => %{
+          "message" => %{
+            "body" => "pass"
+          }
+        },
+        "custom" => %{
+          "foo" => "bar",
+          "qux" => "custom"
+        },
+        "environment" => "test",
+        "level" => "warn"
+      }
+    } = Poison.decode!(body)
   end
 
   test "emit/5: custom values should take precendence over global ones" do
     custom = %{qux: "overridden", quux: "another"}
     :ok = Client.emit(:warn, unix_time(), %{"message" => %{"body" => "pass"}}, custom, %{})
     assert_receive {:api_request, body}
-    assert Poison.decode!(body)["data"]["custom"] == %{"qux" => "overridden", "quux" => "another"}
+    assert %{
+     "data" => %{
+      "custom" => %{
+        "qux" => "overridden",
+        "quux" => "another"
+      },
+    }} = Poison.decode!(body)
   end
 
   test "mass sending" do

@@ -18,14 +18,25 @@ defmodule RollbaxTest do
     exception = RuntimeError.exception("pass")
     :ok = Rollbax.report(:error, exception, stacktrace, %{}, %{uuid: "d4c7"})
     assert_receive {:api_request, body}
-    assert body =~ ~s("level":"error")
-    assert body =~ ~s("class":"RuntimeError")
-    assert body =~ ~s("message":"pass")
-    assert body =~ ~s("filename":"file.exs")
-    assert body =~ ~s("lineno":16)
-    assert body =~ ~s("method":"Test.report/2")
-    assert body =~ ~s("uuid":"d4c7")
-    refute body =~ ~s("custom")
+    assert {:ok, decoded} = Poison.decode body
+    assert %{
+      "access_token" => "token1",
+      "data" => %{
+        "body" => %{
+          "trace" => %{
+            "exception" => %{
+              "class" => "RuntimeError",
+              "message" => "pass"
+            },
+            "frames" => [%{
+              "filename" => "file.exs",
+              "lineno" => 16,
+              "method" => "Test.report/2"
+            }]}},
+      "level" => "error",
+      "uuid" => "d4c7"
+    }} = decoded
+    refute match? %{"data" => %{"body" => %{"custom" => _}}}, decoded
   end
 
   test "report/3 with an error that is not an exception" do
@@ -41,13 +52,24 @@ defmodule RollbaxTest do
     stacktrace = [{Test, :report, 2, [file: 'file.exs', line: 16]}]
     :ok = Rollbax.report(:exit, :oops, stacktrace)
     assert_receive {:api_request, body}
-    assert body =~ ~s("level":"error")
-    assert body =~ ~s("class":"exit")
-    assert body =~ ~s("message":":oops")
-    assert body =~ ~s("filename":"file.exs")
-    assert body =~ ~s("lineno":16)
-    assert body =~ ~s("method":"Test.report/2")
-    refute body =~ ~s("custom")
+    assert {:ok, decoded} = Poison.decode body
+    assert %{
+      "access_token" => "token1",
+      "data" => %{
+        "body" => %{
+          "trace" => %{
+            "exception" => %{
+              "class" => "exit",
+              "message" => ":oops"
+            },
+            "frames" => [%{
+              "filename" => "file.exs",
+              "lineno" => 16,
+              "method" => "Test.report/2"
+            }]}},
+      "level" => "error"
+    }} = decoded
+    refute match? %{"data" => %{"body" => %{"custom" => _}}}, decoded
   end
 
   test "report/3 with an exit where the term is an exception" do
@@ -70,13 +92,24 @@ defmodule RollbaxTest do
     stacktrace = [{Test, :report, 2, [file: 'file.exs', line: 16]}]
     :ok = Rollbax.report(:throw, :oops, stacktrace)
     assert_receive {:api_request, body}
-    assert body =~ ~s("level":"error")
-    assert body =~ ~s("class":"throw")
-    assert body =~ ~s("message":":oops")
-    assert body =~ ~s("filename":"file.exs")
-    assert body =~ ~s("lineno":16)
-    assert body =~ ~s("method":"Test.report/2")
-    refute body =~ ~s("custom")
+    assert {:ok, decoded} = Poison.decode body
+    assert %{
+      "access_token" => "token1",
+      "data" => %{
+        "body" => %{
+          "trace" => %{
+            "exception" => %{
+              "class" => "throw",
+              "message" => ":oops"
+            },
+            "frames" => [%{
+              "filename" => "file.exs",
+              "lineno" => 16,
+              "method" => "Test.report/2"
+            }]}},
+      "level" => "error"
+    }} = decoded
+    refute match? %{"data" => %{"body" => %{"custom" => _}}}, decoded
   end
 
   test "report/3 includes stacktraces in the function name if there's an application" do
