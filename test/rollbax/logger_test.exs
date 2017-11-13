@@ -214,7 +214,7 @@ defmodule Rollbax.LoggerTest do
       }
 
       assert [frame] = find_frames_for_current_file(data["body"]["trace"]["frames"])
-      assert frame["method"] == "anonymous fn/0 in Rollbax.LoggerTest.test process raising an error/1"
+      assert frame["method"] == ~s[anonymous fn/0 in Rollbax.LoggerTest."test process raising an error"/1]
 
       assert data["custom"] == %{"pid" => inspect(pid)}
     end)
@@ -232,7 +232,7 @@ defmodule Rollbax.LoggerTest do
       }
 
       assert [frame] = find_frames_for_current_file(data["body"]["trace"]["frames"])
-      assert frame["method"] == "anonymous fn/0 in Rollbax.LoggerTest.test task with anonymous function raising an error/1"
+      assert frame["method"] == ~s[anonymous fn/0 in Rollbax.LoggerTest."test task with anonymous function raising an error"/1]
 
       assert data["custom"]["name"] == inspect(task)
       assert data["custom"]["function"] =~ ~r/\A#Function<.* in Rollbax\.LoggerTest/
