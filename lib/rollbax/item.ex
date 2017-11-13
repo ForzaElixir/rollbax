@@ -59,7 +59,11 @@ defmodule Rollbax.Item do
     %{"class" => "exit", "message" => message}
   end
 
-  defp exception(:error, error) do
+  defp exception(_, message) when is_binary(message) do
+    %{"message" => message}
+  end
+
+  defp exception(_, error) do
     exception = Exception.normalize(:error, error)
     %{"class" => inspect(exception.__struct__), "message" => Exception.message(exception)}
   end

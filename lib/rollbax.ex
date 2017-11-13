@@ -104,6 +104,11 @@ defmodule Rollbax do
           # You can also reraise the exception here with reraise/2
       end
 
+  Or you can pass a raw message:
+
+      Rollbax.report(:warning, "Unexpected input", System.stacktrace())
+      #=> :ok
+
   For caught exceptions:
 
       try do
@@ -119,14 +124,26 @@ defmodule Rollbax do
       Rollbax.report(:exit, :oops, System.stacktrace(), %{"weather" => "rainy"})
 
   """
-  @spec report(:error | :exit | :throw, any, [any], map, map) :: :ok
+  @spec report(:critical | :debug | :error | :exit | :info | :throw | :warning, any, [any], map, map) :: :ok
   def report(kind, value, stacktrace, custom \\ %{}, occurrence_data \\ %{})
-      when kind in [:error, :exit, :throw] and
+      when kind in [:critical, :debug, :error, :exit, :info, :throw, :warning] and
            is_list(stacktrace) and
            is_map(custom) and
            is_map(occurrence_data) do
     body = Rollbax.Item.exception_to_body(kind, value, stacktrace)
-    Rollbax.Client.emit(:error, unix_time(), body, custom, occurrence_data)
+    Rollbax.Client.emit(level(kind), unix_time(), body, custom, occurrence_data)
+  end
+
+  defp level(:exit) do
+    :error
+  end
+
+  defp level(:throw) do
+    :error
+  end
+
+  defp level(other) do
+    other
   end
 
   defp get_config(key, default) do
