@@ -17,8 +17,18 @@ defmodule Rollbax.ClientTest do
 
   test "emit/5" do
     custom = %{foo: "bar"}
-    :ok = Client.emit(:warn, unix_time(), %{"message" => %{"body" => "pass"}}, custom, %{})
+    occurrence_data = %{
+      "server" => %{
+        "host" => "custom.host",
+        "code_version" => "v1111",
+      }
+    }
+
+    :ok = Client.emit(:warn, unix_time(), %{"message" => %{"body" => "pass"}}, custom, occurrence_data)
     assert_receive {:api_request, body}
+
+    assert body =~ ~s("host":"custom.host")
+    assert body =~ ~s("code_version":"v1111")
     assert body =~ ~s("access_token":"token1")
     assert body =~ ~s("environment":"test")
     assert body =~ ~s("level":"warn")

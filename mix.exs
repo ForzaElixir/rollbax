@@ -12,6 +12,7 @@ defmodule Rollbax.Mixfile do
      description: description(),
      package: package(),
      deps: deps(),
+     aliases: aliases(),
      name: "Rollbax",
      docs: [main: "Rollbax",
             source_ref: "v#{@version}",
@@ -42,5 +43,11 @@ defmodule Rollbax.Mixfile do
     [maintainers: ["Aleksei Magusev", "Andrea Leopardi"],
      licenses: ["ISC"],
      links: %{"GitHub" => "https://github.com/elixir-addicts/rollbax"}]
+  end
+
+  defp aliases do
+    [
+      "test": "test --no-start",
+    ]
   end
 end

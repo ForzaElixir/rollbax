@@ -23,8 +23,8 @@ defmodule Rollbax.Item do
 
   def compose(draft, {level, timestamp, body, custom, occurrence_data}) do
     Map.update!(draft, "data", fn(data) ->
-      occurrence_data
-      |> Map.merge(data)
+      data
+      |> Map.merge(occurrence_data)
       |> Map.put("body", body)
       |> put_custom(custom)
       |> Map.put("level", level)
