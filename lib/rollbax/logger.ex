@@ -73,9 +73,9 @@ defmodule Rollbax.Logger do
     {:ok, state}
   end
 
-  def handle_event({level, _gl, event}, %{metadata: keys, blacklist: blacklist} = state) do
+  def handle_event({level, _gl, event}, %{metadata: keys, blacklist: blacklist, occurrence_func: occurrence_func} = state) do
     if proceed?(event) and meet_level?(level, state.level) do
-      post_event_unless_blacklisted(level, event, keys, blacklist)
+      post_event_unless_blacklisted(level, event, keys, blacklist, occurrence_func)
     end
     {:ok, state}
   end
@@ -94,14 +94,26 @@ defmodule Rollbax.Logger do
     Logger.compare_levels(level, min_level) != :lt
   end
 
-  defp post_event_unless_blacklisted(level, {Logger, message, event_time, metadata}, keys, blacklist) do
+  defp post_event_unless_blacklisted(level, {Logger, message, event_time, metadata}, keys, blacklist, occurrence_func) do
     event_unix_time = event_time_to_unix(event_time)
     message = message |> prune_chardata() |> IO.chardata_to_string()
     unless Enum.any?(blacklist, &(message =~ &1)) do
       metadata = Keyword.take(metadata, keys) |> Enum.into(%{})
       body = Rollbax.Item.message_to_body(message, metadata)
-      Rollbax.Client.emit(level, event_unix_time, body, %{}, %{})
+      occurrence = get_occurrence_data(message, metadata, occurrence_func)
+      Rollbax.Client.emit(level, event_unix_time, body, %{}, occurrence)
     end
+  end
+
+  defp get_occurrence_data(message, metadata, nil), do: %{}
+
+  defp get_occurrence_data(message, metadata, func) when is_function(func) do
+    func.(message, metadata)
+  end
+
+  defp get_occurrence_data(message, metadata, func) do
+    {func, _} = Code.eval_string(func)
+    func.(message, metadata)
   end
 
   defp configure(opts) do
@@ -112,7 +124,8 @@ defmodule Rollbax.Logger do
 
     %{level: Keyword.get(config, :level, :error),
       metadata: Keyword.get(config, :metadata, []),
-      blacklist: Keyword.get(config, :blacklist, [])}
+      blacklist: Keyword.get(config, :blacklist, []),
+      occurrence_func: Keyword.get(config, :occurrence_func, nil)}
   end
 
   defp event_time_to_unix({{_, _, _} = date, {hour, min, sec, _millisec}}) do

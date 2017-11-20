@@ -64,6 +64,29 @@ defmodule Rollbax.LoggerTest do
     assert body =~ ~s("foo":"bar")
   end
 
+  test "reporting with occurence_data" do
+    Logger.configure_backend(
+      Rollbax.Logger,
+      metadata: [:foo], occurrence_func: &CustomOccurrence.compute/2
+    )
+    capture_log(fn -> Logger.error("hello") end)
+    assert_receive {:api_request, body}
+
+    payload = Poison.decode!(body)
+    assert payload["data"]["fingerprint"] == "uniqueforitem"
+
+    # Takes string too
+    Logger.configure_backend(
+      Rollbax.Logger,
+      metadata: [:foo], occurrence_func: "&CustomOccurrence.compute/2"
+    )
+    capture_log(fn -> Logger.error("hello") end)
+    assert_receive {:api_request, body}
+
+    payload = Poison.decode!(body)
+    assert payload["data"]["fingerprint"] == "uniqueforitem"
+  end
+
   if Version.compare(System.version, "1.3.0-rc.1") != :lt do
     test "logging a message that has invalid unicode codepoints" do
       capture_log(fn -> Logger.error(["invalid:", ?\s, 1_000_000_000]) end)
