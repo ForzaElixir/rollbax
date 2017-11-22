@@ -6,23 +6,24 @@ defmodule Rollbax.Item do
   # payload.
 
   def draft(token, environment, custom) do
+    data = %{
+      "server" => %{
+        "host" => host(),
+      },
+      "environment" => environment,
+      "language" => language(),
+      "platform" => platform(),
+      "notifier" => notifier(),
+    }
+
     %{
       "access_token" => token,
-      "data" => %{
-        "server" => %{
-          "host" => host(),
-        },
-        "environment" => environment,
-        "language" => language(),
-        "platform" => platform(),
-        "notifier" => notifier()
-      }
-      |> put_custom(custom)
+      "data" => put_custom(data, custom),
     }
   end
 
   def compose(draft, {level, timestamp, body, custom, occurrence_data}) do
-    Map.update!(draft, "data", fn(data) ->
+    Map.update!(draft, "data", fn data ->
       occurrence_data
       |> Map.merge(data)
       |> Map.put("body", body)
@@ -81,6 +82,7 @@ defmodule Rollbax.Item do
       else
         Exception.format_exit(value)
       end
+
     {"exit", message}
   end
 
