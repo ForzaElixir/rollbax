@@ -269,47 +269,49 @@ defmodule Rollbax.LoggerTest do
     purge_module(MyModule)
   end
 
-  test "gen_fsm terminating" do
-    defmodule Elixir.MyGenFsm do
-      @behaviour :gen_fsm
-      def init(data), do: {:ok, :idle, data}
-      def terminate(_reason, _state, _data), do: :ok
-      def code_change(_vsn, state, data, _extra), do: {:ok, state, data}
-      def handle_event(_event, state, data), do: {:next_state, state, data}
-      def handle_sync_event(_event, _from, state, data), do: {:next_state, state, data}
-      def handle_info(_message, state, data), do: {:next_state, state, data}
+  if String.to_integer(System.otp_release()) < 19 do
+    test "gen_fsm terminating" do
+      defmodule Elixir.MyGenFsm do
+        @behaviour :gen_fsm
+        def init(data), do: {:ok, :idle, data}
+        def terminate(_reason, _state, _data), do: :ok
+        def code_change(_vsn, state, data, _extra), do: {:ok, state, data}
+        def handle_event(_event, state, data), do: {:next_state, state, data}
+        def handle_sync_event(_event, _from, state, data), do: {:next_state, state, data}
+        def handle_info(_message, state, data), do: {:next_state, state, data}
 
-      def idle(:error, state) do
-        :maps.find(:a_key, _not_a_map = [])
-        {:next_state, :idle, state}
+        def idle(:error, state) do
+          :maps.find(:a_key, _not_a_map = [])
+          {:next_state, :idle, state}
+        end
       end
+
+      capture_log(fn ->
+        {:ok, gen_fsm} = :gen_fsm.start(MyGenFsm, {}, _opts = [])
+
+        :gen_fsm.send_event(gen_fsm, :error)
+
+        data = assert_performed_request()["data"]
+
+        # Check the exception.
+        assert data["body"]["trace"]["exception"] == %{
+          "class" => "State machine terminating (BadMapError)",
+          "message" => "expected a map, got: []",
+        }
+
+        assert [frame] = find_frames_for_current_file(data["body"]["trace"]["frames"])
+        assert frame["method"] == "MyGenFsm.idle/2"
+
+        assert data["custom"] == %{
+          "last_event" => ":error",
+          "name" => inspect(gen_fsm),
+          "state" => ":idle",
+          "data" => "{}",
+        }
+      end)
+    after
+      purge_module(MyGenFsm)
     end
-
-    capture_log(fn ->
-      {:ok, gen_fsm} = :gen_fsm.start(MyGenFsm, {}, _opts = [])
-
-      :gen_fsm.send_event(gen_fsm, :error)
-
-      data = assert_performed_request()["data"]
-
-      # Check the exception.
-      assert data["body"]["trace"]["exception"] == %{
-        "class" => "State machine terminating (BadMapError)",
-        "message" => "expected a map, got: []",
-      }
-
-      assert [frame] = find_frames_for_current_file(data["body"]["trace"]["frames"])
-      assert frame["method"] == "MyGenFsm.idle/2"
-
-      assert data["custom"] == %{
-        "last_event" => ":error",
-        "name" => inspect(gen_fsm),
-        "state" => ":idle",
-        "data" => "{}",
-      }
-    end)
-  after
-    purge_module(MyGenFsm)
   end
 
   test "when the endpoint is down, no logs are reported" do
