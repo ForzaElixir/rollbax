@@ -1,141 +1,96 @@
 defmodule Rollbax.Logger do
   @moduledoc """
-  `Logger` backend that reports logged messages to Rollbar.
-
-  This module is a `Logger` backend that reports logged messages to Rollbar. In
-  order to use it, first make sure that Rollbax is configured correctly for
-  reporting to Rollbar (look at the documentation for the `Rollbax` module for
-  more information). Then, add `Rollbax.Logger` as a backend in the
-  configuration for the `:logger` application. For example, in
-  `config/config.exs`:
-
-      config :logger,
-        backends: [:console, Rollbax.Logger]
-
-  ## Configuration
-
-  `Rollbax.Logger` supports the following configuration options:
-
-    * `:level` - (`:debug`, `:info`, `:warn`, or `:error`) the logging
-      level. Any message with severity less than the configured level will not
-      be reported to Rollbar. Note that messages are filtered by the general
-      `:level` configuration option for the `:logger` application first (in the
-      same way as for the `:console` backend).
-    * `:metadata` - (list of atoms) list of metadata to be attached to the
-      reported message. These metadata will be showed alongside each
-      "occurrence" of a given item in Rollbar. Defaults to `[]`.
-    * `:blacklist` - (list of regexps or strings) a list of patterns that allows
-      to avoid reporting messages that match one or more of these patterns. All
-      patterns will be tested against the logged message with the `=~` operator,
-      which in particular means that a string pattern will match if the logged
-      message contains it. Defaults to `[]` (so that no messages are blacklisted).
-
-  These options can be configured under `Rollbax.Logger` in the configuration
-  for the `:logger` application. For example, in `config/config.exs`:
-
-      config :logger, Rollbax.Logger,
-        level: :warn,
-        metadata: [:file, :line, :function]
-
-  ## Disable reporting
-
-  Reporting to Rollbar can manually disabled for given `Logger` calls by passing
-  the `rollbar: false` as a metadata to such calls. For example, to disable
-  reporting for a specific logged message:
-
-      Logger.error("Secret error, better not report this", rollbar: false)
-
-  To disable reporting for all subsequent messages:
-
-      Logger.metadata(rollbar: false)
-
+  TODO
   """
 
-  use GenEvent
+  @behaviour :gen_event
+
+  defstruct [:reporters, :report_regular_logs]
 
   @unix_epoch :calendar.datetime_to_gregorian_seconds({{1970, 1, 1}, {0, 0, 0}})
 
   @doc false
-  def init(__MODULE__) do
-    {:ok, configure([])}
-  end
-
-  @doc false
-  def handle_call({:configure, opts}, _state) do
-    {:ok, :ok, configure(opts)}
+  def init(_args) do
+    reporters = Application.get_env(:rollbax, :reporters, [Rollbax.Reporter.Standard])
+    report_regular_logs? = Application.get_env(:rollbax, :report_regular_logs, true)
+    {:ok, %__MODULE__{reporters: reporters, report_regular_logs: report_regular_logs?}}
   end
 
   @doc false
   def handle_event(event, state)
 
+  # If the event is on a different node than the current node, we ignore it.
   def handle_event({_level, gl, _event}, state)
       when node(gl) != node() do
     {:ok, state}
   end
 
-  def handle_event({level, _gl, event}, %{metadata: keys, blacklist: blacklist} = state) do
-    if proceed?(event) and meet_level?(level, state.level) do
-      post_event_unless_blacklisted(level, event, keys, blacklist)
-    end
+  def handle_event({level, _gl, event}, %__MODULE__{} = state) do
+    %{reporters: reporters, report_regular_logs: report_regular_logs?} = state
+    :ok = run_reporters(reporters, level, event, report_regular_logs?)
     {:ok, state}
   end
 
-  # TODO: in the future, we probably need to flush all responses from Rollbar's
-  # API coming from logged messages, so nothing is printed.
-  def handle_event(:flush, state) do
+  @doc false
+  def handle_call(request, _state) do
+    exit({:bad_call, request})
+  end
+
+  @doc false
+  def handle_info(_message, state) do
     {:ok, state}
   end
 
-  defp proceed?({Logger, _message, _event_time, metadata}) do
-    Keyword.get(metadata, :rollbax, true)
+  @doc false
+  def terminate(_reason, _state) do
+    :ok
   end
 
-  defp meet_level?(level, min_level) do
-    Logger.compare_levels(level, min_level) != :lt
+  @doc false
+  def code_change(_old_vsn, state, _extra) do
+    {:ok, state}
   end
 
-  defp post_event_unless_blacklisted(level, {Logger, message, event_time, metadata}, keys, blacklist) do
-    event_unix_time = event_time_to_unix(event_time)
-    message = message |> prune_chardata() |> IO.chardata_to_string()
-    unless Enum.any?(blacklist, &(message =~ &1)) do
-      metadata = Keyword.take(metadata, keys) |> Enum.into(%{})
-      body = Rollbax.Item.message_to_body(message, metadata)
-      Rollbax.Client.emit(level, event_unix_time, body, %{}, %{})
+  defp run_reporters([reporter | rest], level, event, report_regular_logs?) do
+    case reporter.handle_event(level, event) do
+      %Rollbax.Exception{} = exception ->
+        Rollbax.report_exception(exception)
+      :next ->
+        run_reporters(rest, level, event, report_regular_logs?)
+      :ignore ->
+        :ok
     end
   end
 
-  defp configure(opts) do
-    config =
-      Application.get_env(:logger, __MODULE__, [])
-      |> Keyword.merge(opts)
-    Application.put_env(:logger, __MODULE__, config)
-
-    %{level: Keyword.get(config, :level, :error),
-      metadata: Keyword.get(config, :metadata, []),
-      blacklist: Keyword.get(config, :blacklist, [])}
+  defp run_reporters([], _level, _event, _report_regular_logs? = false) do
+    :ok
   end
 
-  defp event_time_to_unix({{_, _, _} = date, {hour, min, sec, _millisec}}) do
-    :calendar.datetime_to_gregorian_seconds({date, {hour, min, sec}}) - @unix_epoch
+  # If no reporter ignored or reported this event, then we're gonna report this
+  # as a Rollbar "message" with the same logic that Logger uses to translate
+  # messages (so that it will have Elixir syntax when reported).
+  defp run_reporters([], level, event, _report_regular_logs? = true) do
+    if message = format_event(level, event) do
+      body =
+        message
+        |> IO.chardata_to_string()
+        |> Rollbax.Item.message_body()
+
+      Rollbax.Client.emit(:error, current_timestamp(), body, %{}, %{})
+    end
+
+    :ok
   end
 
-  # Before converting the chardata to log into a string (with
-  # IO.chardata_to_string/1), we need to prune it so that we don't try to
-  # convert invalid unicode codepoints, which leads to a UnicodeConversionError
-  # being raised. This function is taken basically straight from
-  # https://github.com/elixir-lang/elixir/blob/e26f8de5753c16ad047b25e4ee9c31b9a45026e5/lib/logger/lib/logger/formatter.ex#L49-L66.
-  replacement = "�"
+  defp format_event(:error, {_pid, format, args}),
+    do: :io_lib.format(format, args)
+  defp format_event(:error_report, {_pid, type, format})
+       when type in [:std_error, :supervisor_report, :crash_report],
+    do: inspect(format)
+  defp format_event(_type, _data),
+    do: nil
 
-  defp prune_chardata(binary) when is_binary(binary), do: prune_binary(binary, "")
-  defp prune_chardata([head | tail]) when head in 0..1114111, do: [head | prune_chardata(tail)]
-  defp prune_chardata([head | tail]), do: [prune_chardata(head) | prune_chardata(tail)]
-  defp prune_chardata([]), do: []
-  defp prune_chardata(_), do: unquote(replacement)
-
-  defp prune_binary(<<head::utf8, tail::binary>>, acc),
-    do: prune_binary(tail, <<acc::binary, head::utf8>>)
-  defp prune_binary(<<_, tail::binary>>, acc),
-    do: prune_binary(tail, <<acc::binary, unquote(replacement)>>)
-  defp prune_binary(<<>>, acc),
-    do: acc
+  defp current_timestamp() do
+    :calendar.datetime_to_gregorian_seconds(:calendar.universal_time()) - @unix_epoch
+  end
 end

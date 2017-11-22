@@ -54,6 +54,10 @@ defmodule Rollbax do
     token = fetch_and_resolve_config(:access_token)
     envt  = fetch_and_resolve_config(:environment)
 
+    if get_config(:crash_reports, [])[:enabled] do
+      :error_logger.add_report_handler(Rollbax.Logger)
+    end
+
     children = [
       worker(Rollbax.Client, [token, envt, enabled, custom])
     ]
@@ -125,7 +129,23 @@ defmodule Rollbax do
            is_list(stacktrace) and
            is_map(custom) and
            is_map(occurrence_data) do
-    body = Rollbax.Item.exception_to_body(kind, value, stacktrace)
+    {class, message} = Rollbax.Item.exception_class_and_message(kind, value)
+
+    report_exception(%Rollbax.Exception{
+      class: class,
+      message: message,
+      stacktrace: stacktrace,
+      custom: custom,
+      occurrence_data: occurrence_data,
+    })
+  end
+
+  @doc false
+  @spec report_exception(Rollbax.Exception.t) :: :ok
+  def report_exception(%Rollbax.Exception{} = exception) do
+    %{class: class, message: message, stacktrace: stacktrace,
+      custom: custom, occurrence_data: occurrence_data} = exception
+    body = Rollbax.Item.exception_body(class, message, stacktrace)
     Rollbax.Client.emit(:error, unix_time(), body, custom, occurrence_data)
   end
 
