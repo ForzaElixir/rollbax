@@ -18,6 +18,8 @@ defmodule Rollbax.LoggerTest do
       Application.delete_env(:rollbax, :reporters)
     end
 
+    Application.put_env(:rollbax, :report_regular_logs, context[:report_regular_logs] || false)
+
     :error_logger.add_report_handler(Rollbax.Logger)
 
     on_exit(fn ->
@@ -332,6 +334,7 @@ defmodule Rollbax.LoggerTest do
   end
 
   @tag reporters: []
+  @tag report_regular_logs: true
   test "if no reporters are provided, events are reported as messages, not exceptions" do
     defmodule Elixir.MyGenServer do
       use GenServer
