@@ -11,8 +11,8 @@ defmodule Rollbax.Item do
         "host" => host(),
       },
       "environment" => environment,
-      "language" => language(),
-      "platform" => platform(),
+      "language" => "Elixir v" <> System.version(),
+      "platform" => System.otp_release(),
       "notifier" => notifier(),
     }
 
@@ -149,16 +149,6 @@ defmodule Rollbax.Item do
   defp host() do
     {:ok, host} = :inet.gethostname()
     List.to_string(host)
-  end
-
-  defp language() do
-    "Elixir v" <> System.version
-  end
-
-  defp platform() do
-    :erlang.system_info(:system_version)
-    |> List.to_string
-    |> String.trim
   end
 
   defp notifier() do
