@@ -271,7 +271,7 @@ defmodule Rollbax.LoggerTest do
     purge_module(MyModule)
   end
 
-  if String.to_integer(System.otp_release()) < 19 do
+  if List.to_integer(:erlang.system_info(:otp_release)) < 19 do
     test "gen_fsm terminating" do
       defmodule Elixir.MyGenFsm do
         @behaviour :gen_fsm
