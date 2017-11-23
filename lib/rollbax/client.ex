@@ -13,6 +13,8 @@ defmodule Rollbax.Client do
 
   alias Rollbax.Item
 
+  @name __MODULE__
+  @hackney_pool __MODULE__
   @api_url "https://api.rollbar.com/api/1/item/"
   @headers [{"content-type", "application/json"}]
 
@@ -22,13 +24,18 @@ defmodule Rollbax.Client do
 
   ## Public API
 
-  def start_link(token, environment, enabled, custom, url \\ @api_url) do
-    state = new(token, environment, url, enabled, custom)
-    GenServer.start_link(__MODULE__, state, [name: __MODULE__])
+  def start_link(access_token, environment, enabled, custom, url \\ @api_url) do
+    state = %__MODULE__{
+      draft: Item.draft(access_token, environment, custom),
+      url: url,
+      enabled: enabled,
+    }
+
+    GenServer.start_link(__MODULE__, state, name: @name)
   end
 
   def emit(level, timestamp, body, custom, occurrence_data) do
-    if pid = Process.whereis(__MODULE__) do
+    if pid = Process.whereis(@name) do
       event = {Atom.to_string(level), timestamp, body, custom, occurrence_data}
       GenServer.cast(pid, {:emit, event})
     else
@@ -40,12 +47,12 @@ defmodule Rollbax.Client do
 
   def init(state) do
     Logger.metadata(rollbax: false)
-    :ok = :hackney_pool.start_pool(__MODULE__, [max_connections: 20])
+    :ok = :hackney_pool.start_pool(@hackney_pool, [max_connections: 20])
     {:ok, state}
   end
 
   def terminate(_reason, _state) do
-    :ok = :hackney_pool.stop_pool(__MODULE__)
+    :ok = :hackney_pool.stop_pool(@hackney_pool)
   end
 
   def handle_cast({:emit, _event}, %{enabled: false} = state) do
@@ -53,16 +60,14 @@ defmodule Rollbax.Client do
   end
 
   def handle_cast({:emit, event}, %{enabled: :log} = state) do
-    Logger.info [
-      "(Rollbax) registered report.\n", event_to_chardata(event),
-    ]
+    Logger.info(["(Rollbax) registered report.\n", event_to_chardata(event)])
     {:noreply, state}
   end
 
   def handle_cast({:emit, event}, %{enabled: true} = state) do
     case compose_json(state.draft, event) do
       {:ok, payload} ->
-        opts = [:async, pool: __MODULE__]
+        opts = [:async, pool: @hackney_pool]
         case :hackney.post(state.url, @headers, payload, opts) do
           {:ok, _ref} -> :ok
           {:error, reason} ->
@@ -89,11 +94,6 @@ defmodule Rollbax.Client do
   end
 
   ## Helper functions
-
-  defp new(token, environment, url, enabled, custom) do
-    draft = Item.draft(token, environment, custom)
-    %__MODULE__{draft: draft, url: url, enabled: enabled}
-  end
 
   defp compose_json(draft, event) do
     item = Item.compose(draft, event)
