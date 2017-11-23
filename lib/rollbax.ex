@@ -46,20 +46,22 @@ defmodule Rollbax do
 
   @doc false
   def start(_type, _args) do
-    import Supervisor.Spec
+    enabled = Application.get_env(:rollbax, :enabled, true)
+    custom = Application.get_env(:custom, %{})
+    environment = resolve_system_env(Application.fetch_env!(:rollbax, :environment))
 
-    enabled = get_config(:enabled, true)
-    custom  = get_config(:custom, %{})
+    access_token =
+      case enabled do
+        true -> resolve_system_env(Application.fetch_env!(:rollbax, :access_token))
+        _other -> :not_needed
+      end
 
-    token = fetch_and_resolve_config(:access_token)
-    envt  = fetch_and_resolve_config(:environment)
-
-    if get_config(:crash_reports, [])[:enabled] do
+    if Application.get_env(:rollbax, :crash_reports, [])[:enabled] do
       :error_logger.add_report_handler(Rollbax.Logger)
     end
 
     children = [
-      worker(Rollbax.Client, [token, envt, enabled, custom])
+      Supervisor.Spec.worker(Rollbax.Client, [access_token, environment, enabled, custom])
     ]
 
     Supervisor.start_link(children, strategy: :one_for_one)
@@ -149,19 +151,12 @@ defmodule Rollbax do
     Rollbax.Client.emit(:error, unix_time(), body, custom, occurrence_data)
   end
 
-  defp get_config(key, default) do
-    Application.get_env(:rollbax, key, default)
+  defp resolve_system_env({:system, var}) when is_binary(var) do
+    System.get_env(var) || raise ArgumentError, "system environment variable #{inspect(var)} is not set"
   end
 
-  defp fetch_and_resolve_config(key) do
-    case Application.fetch_env(:rollbax, key) do
-      {:ok, {:system, var}} when is_binary(var) ->
-        System.get_env(var) || raise ArgumentError, "system environment variable #{inspect(var)} is not set"
-      {:ok, value} ->
-        value
-      :error ->
-        raise ArgumentError, "the configuration parameter #{inspect(key)} is not set"
-    end
+  defp resolve_system_env(value) do
+    value
   end
 
   defp unix_time() do
