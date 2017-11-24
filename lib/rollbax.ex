@@ -47,7 +47,7 @@ defmodule Rollbax do
   @doc false
   def start(_type, _args) do
     enabled = Application.get_env(:rollbax, :enabled, true)
-    custom = Application.get_env(:custom, %{})
+    custom = Application.get_env(:rollbax, :custom, %{})
     environment = resolve_system_env(Application.fetch_env!(:rollbax, :environment))
 
     access_token =
