@@ -15,7 +15,6 @@ defmodule Rollbax.Client do
 
   @name __MODULE__
   @hackney_pool __MODULE__
-  @api_url "https://api.rollbar.com/api/1/item/"
   @headers [{"content-type", "application/json"}]
 
   ## GenServer state
@@ -24,10 +23,10 @@ defmodule Rollbax.Client do
 
   ## Public API
 
-  def start_link(access_token, environment, enabled, custom, url \\ @api_url) do
+  def start_link(api_endpoint, access_token, environment, enabled, custom) do
     state = %__MODULE__{
       draft: Item.draft(access_token, environment, custom),
-      url: url,
+      url: api_endpoint,
       enabled: enabled,
     }
 

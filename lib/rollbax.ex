@@ -30,6 +30,8 @@ defmodule Rollbax do
       individual call to `Rollbax.report/5` it will be merged with the global
       data, with the individual data taking precedence in case of conflicts.
       Defaults to `%{}`.
+    * `:api_endpoint` - (binary) the rollbar endpoint to report exceptions to.
+      Defaults to `https://api.rollbar.com/api/1/item/`.
 
   The `:access_token` and `:environment` options accept a binary or a
   `{:system, "VAR_NAME"}` tuple. When given a tuple like `{:system, "VAR_NAME"}`,
@@ -44,10 +46,13 @@ defmodule Rollbax do
 
   use Application
 
+  @default_api_endpoint "https://api.rollbar.com/api/1/item/"
+
   @doc false
   def start(_type, _args) do
     enabled = Application.get_env(:rollbax, :enabled, true)
     custom = Application.get_env(:rollbax, :custom, %{})
+    api_endpoint = Application.get_env(:rollbax, :api_endpoint, @default_api_endpoint)
     environment = resolve_system_env(Application.fetch_env!(:rollbax, :environment))
 
     access_token =
@@ -61,7 +66,7 @@ defmodule Rollbax do
     end
 
     children = [
-      Supervisor.Spec.worker(Rollbax.Client, [access_token, environment, enabled, custom])
+      Supervisor.Spec.worker(Rollbax.Client, [api_endpoint, access_token, environment, enabled, custom])
     ]
 
     Supervisor.start_link(children, strategy: :one_for_one)
