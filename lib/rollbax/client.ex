@@ -23,10 +23,10 @@ defmodule Rollbax.Client do
 
   ## Public API
 
-  def start_link(access_token, environment, enabled, custom, url) do
+  def start_link(api_endpoint, access_token, environment, enabled, custom) do
     state = %__MODULE__{
       draft: Item.draft(access_token, environment, custom),
-      url: url,
+      url: api_endpoint,
       enabled: enabled,
     }
 

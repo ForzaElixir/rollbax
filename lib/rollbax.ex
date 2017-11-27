@@ -66,7 +66,7 @@ defmodule Rollbax do
     end
 
     children = [
-      Supervisor.Spec.worker(Rollbax.Client, [access_token, environment, enabled, custom, api_endpoint])
+      Supervisor.Spec.worker(Rollbax.Client, [api_endpoint, access_token, environment, enabled, custom])
     ]
 
     Supervisor.start_link(children, strategy: :one_for_one)
