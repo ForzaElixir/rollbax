@@ -47,6 +47,7 @@ defmodule Rollbax do
   use Application
 
   @default_api_endpoint "https://api.rollbar.com/api/1/item/"
+  @allowed_message_levels [:critical, :error, :warning, :info, :debug]
 
   @doc false
   def start(_type, _args) do
@@ -168,9 +169,8 @@ defmodule Rollbax do
 
   """
   @spec report_message(:critical | :error | :warning | :info | :debug, IO.chardata, map, map) :: :ok
-  allowed_levels = [:critical, :error, :warning, :info, :debug]
   def report_message(level, message, custom \\ %{}, occurrence_data \\ %{})
-      when level in unquote(allowed_levels) and is_map(custom) and is_map(occurrence_data) do
+      when level in @allowed_message_levels and is_map(custom) and is_map(occurrence_data) do
     body = message |> IO.chardata_to_string() |> Rollbax.Item.message_body()
     Rollbax.Client.emit(level, unix_time(), body, custom, occurrence_data)
   end
