@@ -147,6 +147,34 @@ defmodule Rollbax do
     })
   end
 
+  @doc """
+  Reports the given `message`.
+
+  `message` will be reported as a simple Rollbar message, for example, without a stacktrace.
+  `level` is the level of the message, which can be one of:
+
+    * `:critical`
+    * `:error`
+    * `:warning`
+    * `:info`
+    * `:debug`
+
+  `custom` and `occurrence_data` work exactly like they do in `report/5`.
+
+  ## Examples
+
+      Rollbax.report_message(:critical, "Everything is on fire!")
+      #=> :ok
+
+  """
+  @spec report_message(:critical | :error | :warning | :info | :debug, IO.chardata, map, map) :: :ok
+  allowed_levels = [:critical, :error, :warning, :info, :debug]
+  def report_message(level, message, custom \\ %{}, occurrence_data \\ %{})
+      when level in unquote(allowed_levels) and is_map(custom) and is_map(occurrence_data) do
+    body = message |> IO.chardata_to_string() |> Rollbax.Item.message_body()
+    Rollbax.Client.emit(level, unix_time(), body, custom, occurrence_data)
+  end
+
   @doc false
   @spec report_exception(Rollbax.Exception.t) :: :ok
   def report_exception(%Rollbax.Exception{} = exception) do
