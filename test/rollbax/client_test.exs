@@ -15,36 +15,38 @@ defmodule Rollbax.ClientTest do
     on_exit(&RollbarAPI.stop/0)
   end
 
-  test "emit/5" do
-    custom = %{foo: "bar"}
-    :ok = Client.emit(:warn, unix_time(), %{"message" => %{"body" => "pass"}}, custom, %{})
-    assert_receive {:api_request, body}
-    assert body =~ ~s("access_token":"token1")
-    assert body =~ ~s("environment":"test")
-    assert body =~ ~s("level":"warn")
-    assert body =~ ~s("body":"pass")
-    assert body =~ ~s("foo":"bar")
-    assert body =~ ~s("qux":"custom")
-  end
+  describe "emit/5" do
+    test "fills in the right data" do
+      custom = %{foo: "bar"}
+      :ok = Client.emit(:warn, System.system_time(:seconds), %{"message" => %{"body" => "pass"}}, custom, %{})
+      assert_receive {:api_request, body}
+      assert body =~ ~s("access_token":"token1")
+      assert body =~ ~s("environment":"test")
+      assert body =~ ~s("level":"warn")
+      assert body =~ ~s("body":"pass")
+      assert body =~ ~s("foo":"bar")
+      assert body =~ ~s("qux":"custom")
+    end
 
-  test "emit/5: custom values should take precendence over global ones" do
-    custom = %{qux: "overridden", quux: "another"}
-    :ok = Client.emit(:warn, unix_time(), %{"message" => %{"body" => "pass"}}, custom, %{})
-    assert_receive {:api_request, body}
-    assert Poison.decode!(body)["data"]["custom"] == %{"qux" => "overridden", "quux" => "another"}
-  end
+    test "gives precedence to custom values over global ones" do
+      custom = %{qux: "overridden", quux: "another"}
+      :ok = Client.emit(:warn, System.system_time(:seconds), %{"message" => %{"body" => "pass"}}, custom, %{})
+      assert_receive {:api_request, body}
+      assert Poison.decode!(body)["data"]["custom"] == %{"qux" => "overridden", "quux" => "another"}
+    end
 
-  test "emit/5: occurrence data provided by the user overrides data from Rollbax" do
-    body = %{"message" => %{"body" => "pass"}}
-    occurrence_data = %{"server" => %{"host" => "example.net"}}
-    :ok = Client.emit(:warn, unix_time(), body, _custom = %{}, occurrence_data)
-    assert_receive {:api_request, body}
-    assert Poison.decode!(body)["data"]["server"] == %{"host" => "example.net"}
+    test "gives precedence to user occurrence data over data from Rollbax" do
+      body = %{"message" => %{"body" => "pass"}}
+      occurrence_data = %{"server" => %{"host" => "example.net"}}
+      :ok = Client.emit(:warn, System.system_time(:seconds), body, _custom = %{}, occurrence_data)
+      assert_receive {:api_request, body}
+      assert Poison.decode!(body)["data"]["server"] == %{"host" => "example.net"}
+    end
   end
 
   test "mass sending" do
     for _ <- 1..60 do
-      :ok = Client.emit(:error, unix_time(), %{"message" => %{"body" => "pass"}}, %{}, %{})
+      :ok = Client.emit(:error, System.system_time(:seconds), %{"message" => %{"body" => "pass"}}, %{}, %{})
     end
 
     for _ <- 1..60 do
@@ -55,7 +57,7 @@ defmodule Rollbax.ClientTest do
   test "endpoint is down" do
     :ok = RollbarAPI.stop
     log = capture_log(fn ->
-      :ok = Client.emit(:error, unix_time(), %{"message" => %{"body" => "miss"}}, %{}, %{})
+      :ok = Client.emit(:error, System.system_time(:seconds), %{"message" => %{"body" => "miss"}}, %{}, %{})
     end)
     assert log =~ "[error] (Rollbax) connection error: :econnrefused"
     refute_receive {:api_request, _body}
@@ -63,7 +65,7 @@ defmodule Rollbax.ClientTest do
 
   test "errors from the API are logged" do
     log = capture_log(fn ->
-      :ok = Client.emit(:error, unix_time(), %{}, %{return_error?: true}, %{})
+      :ok = Client.emit(:error, System.system_time(:seconds), %{}, %{return_error?: true}, %{})
       assert_receive {:api_request, _body}
     end)
 
@@ -73,7 +75,7 @@ defmodule Rollbax.ClientTest do
 
   test "invalid item failure" do
     log = capture_log(fn ->
-      :ok = Client.emit(:error, unix_time(), %{"message" => %{"body" => <<208>>}}, %{}, %{})
+      :ok = Client.emit(:error, System.system_time(:seconds), %{"message" => %{"body" => <<208>>}}, %{}, %{})
       refute_receive {:api_request, _body}
     end)
 
@@ -85,10 +87,5 @@ defmodule Rollbax.ClientTest do
     Custom data: %{}
     Occurrence data: %{}
     """
-  end
-
-  defp unix_time() do
-    {mgsec, sec, _usec} = :os.timestamp()
-    mgsec * 1_000_000 + sec
   end
 end
