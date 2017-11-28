@@ -97,4 +97,13 @@ defmodule RollbaxTest do
       assert body =~ ~s["method":"NoApp.for_this_module/3"]
     end
   end
+
+  test "report_message/4" do
+    :ok = Rollbax.report_message(:critical, "Everything is on fire!")
+
+    assert_receive {:api_request, body}
+
+    assert body =~ ~s("level":"critical")
+    assert body =~ ~s("body":"Everything is on fire!")
+  end
 end

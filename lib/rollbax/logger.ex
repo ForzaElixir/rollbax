@@ -7,8 +7,6 @@ defmodule Rollbax.Logger do
 
   defstruct [:reporters, :report_regular_logs]
 
-  @unix_epoch :calendar.datetime_to_gregorian_seconds({{1970, 1, 1}, {0, 0, 0}})
-
   @doc false
   def init(_args) do
     reporters = Application.get_env(:rollbax, :reporters, [Rollbax.Reporter.Standard])
@@ -71,12 +69,7 @@ defmodule Rollbax.Logger do
   # messages (so that it will have Elixir syntax when reported).
   defp run_reporters([], level, event, _report_regular_logs? = true) do
     if message = format_event(level, event) do
-      body =
-        message
-        |> IO.chardata_to_string()
-        |> Rollbax.Item.message_body()
-
-      Rollbax.Client.emit(:error, current_timestamp(), body, %{}, %{})
+      Rollbax.report_message(:error, message)
     end
 
     :ok
@@ -89,8 +82,4 @@ defmodule Rollbax.Logger do
     do: inspect(format)
   defp format_event(_type, _data),
     do: nil
-
-  defp current_timestamp() do
-    :calendar.datetime_to_gregorian_seconds(:calendar.universal_time()) - @unix_epoch
-  end
 end

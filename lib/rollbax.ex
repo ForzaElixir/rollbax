@@ -47,6 +47,7 @@ defmodule Rollbax do
   use Application
 
   @default_api_endpoint "https://api.rollbar.com/api/1/item/"
+  @allowed_message_levels [:critical, :error, :warning, :info, :debug]
 
   @doc false
   def start(_type, _args) do
@@ -145,6 +146,33 @@ defmodule Rollbax do
       custom: custom,
       occurrence_data: occurrence_data,
     })
+  end
+
+  @doc """
+  Reports the given `message`.
+
+  `message` will be reported as a simple Rollbar message, for example, without a stacktrace.
+  `level` is the level of the message, which can be one of:
+
+    * `:critical`
+    * `:error`
+    * `:warning`
+    * `:info`
+    * `:debug`
+
+  `custom` and `occurrence_data` work exactly like they do in `report/5`.
+
+  ## Examples
+
+      Rollbax.report_message(:critical, "Everything is on fire!")
+      #=> :ok
+
+  """
+  @spec report_message(:critical | :error | :warning | :info | :debug, IO.chardata, map, map) :: :ok
+  def report_message(level, message, custom \\ %{}, occurrence_data \\ %{})
+      when level in @allowed_message_levels and is_map(custom) and is_map(occurrence_data) do
+    body = message |> IO.chardata_to_string() |> Rollbax.Item.message_body()
+    Rollbax.Client.emit(level, unix_time(), body, custom, occurrence_data)
   end
 
   @doc false
