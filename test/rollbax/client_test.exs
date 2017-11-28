@@ -34,6 +34,14 @@ defmodule Rollbax.ClientTest do
     assert Poison.decode!(body)["data"]["custom"] == %{"qux" => "overridden", "quux" => "another"}
   end
 
+  test "emit/5: occurrence data provided by the user overrides data from Rollbax" do
+    body = %{"message" => %{"body" => "pass"}}
+    occurrence_data = %{"server" => %{"host" => "example.net"}}
+    :ok = Client.emit(:warn, unix_time(), body, _custom = %{}, occurrence_data)
+    assert_receive {:api_request, body}
+    assert Poison.decode!(body)["data"]["server"] == %{"host" => "example.net"}
+  end
+
   test "mass sending" do
     for _ <- 1..60 do
       :ok = Client.emit(:error, unix_time(), %{"message" => %{"body" => "pass"}}, %{}, %{})
