@@ -1,6 +1,48 @@
 defmodule Rollbax.Logger do
   @moduledoc """
-  TODO
+  A module that can be used to report crashes and exits to Rollbar.
+
+  In Elixir and Erlang, crashes from GenServers and other processes are reported through
+  `:error_logger`. When installed, this module installs an `:error_logger` handler that can be
+  used to report such crashes to Rollbar automatically.
+
+  In order to use this functionality, you must configure the `:rollbax` application to report
+  crashes with:
+
+      config :rollbax, :enable_crash_reports, true
+
+  All the configuration options for reporting crashes are documented in detail below.
+
+  `Rollbax.Logger` implements a mechanism of reporting based on *reporters*, which are modules
+  that implement the `Rollbax.Reporter` behaviour. Every message received by `Rollbax.Logger` is
+  run through a list of reporters and the behaviour is determined by the return value of each
+  reporter's `c:Rollbax.Reporter.handle_event/2` callback:
+
+    * when the callback returns a `Rollbax.Exception` struct, the exception is reported to Rollbar
+      and no other reporters are called
+
+    * when the callback returns `:next`, the reporter is skipped and Rollbax moves on to the next
+      reporter
+
+    * when the callback returns `:ignore`, the reported message is ignored and no more reporters
+      are tried.
+
+  The list of reporters can be configured in the `:reporters` key in the `:rollbax` application
+  configuration. By default this list only contains `Rollbax.Reported.Standard` (see its
+  documentation for more information). Rollbax also comes equipped with a
+  `Rollbax.Reporter.Silencing` reporter that doesn't report anything it receives. For examples on
+  how to provide your own reporters, look at the source for `Rollbax.Repoter.Standard`.
+
+  ## Configuration
+
+  The following reporting-related options can be used to configure the `:rollbax` application:
+
+    * `:enable_crash_reports` (boolean) - when `true`, `Rollbax.Logger` is registered as an
+      `:error_logger` handler and the whole reporting flow described above is executed.
+
+    * `:reporters` (list) - a list of modules implementing the `Rollbax.Reporter` behaviour.
+      Defaults to `[Rollbax.Reporter.Standard]`.
+
   """
 
   @behaviour :gen_event

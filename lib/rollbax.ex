@@ -36,15 +36,18 @@ defmodule Rollbax do
     * `:api_endpoint` - (binary) the Rollbar endpoint to report exceptions and messages to.
       Defaults to `https://api.rollbar.com/api/1/item/`.
 
+    * `:enable_crash_reports` - see `Rollbax.Logger`.
+
+    * `:reporters` - see `Rollbax.Logger`.
+
   The `:access_token` and `:environment` options accept a binary or a
   `{:system, "VAR_NAME"}` tuple. When given a tuple like `{:system, "VAR_NAME"}`,
   the value will be referenced from `System.get_env("VAR_NAME")` at runtime.
 
   ## Logger backend
 
-  Rollbax provides a Logger backend that reports logged messages to Rollbar; this backend is often
-  useful because it allows to report crashes and exits from processes to Rollbar. For more
-  information, look at the documenation for `Rollbax.Logger`.
+  Rollbax provides a module that reports logged crashes and exits to Rollbar. For more
+  information, look at the documentation for `Rollbax.Logger`.
   """
 
   use Application

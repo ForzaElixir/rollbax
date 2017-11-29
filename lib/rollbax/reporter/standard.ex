@@ -1,7 +1,10 @@
 defmodule Rollbax.Reporter.Standard do
-  @behaviour Rollbax.Reporter
+  @moduledoc """
+  A `Rollbax.Reporter` that translates crashes and exits from processes to nicely-formatted
+  Rollbar exceptions.
+  """
 
-  require Logger
+  @behaviour Rollbax.Reporter
 
   def handle_event(:error, {_pid, format, data}) do
     handle_error_format(format, data)
