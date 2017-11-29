@@ -47,13 +47,12 @@ defmodule Rollbax.Logger do
 
   @behaviour :gen_event
 
-  defstruct [:reporters, :report_regular_logs]
+  defstruct [:reporters]
 
   @doc false
   def init(_args) do
     reporters = Application.get_env(:rollbax, :reporters, [Rollbax.Reporter.Standard])
-    report_regular_logs? = Application.get_env(:rollbax, :report_regular_logs, true)
-    {:ok, %__MODULE__{reporters: reporters, report_regular_logs: report_regular_logs?}}
+    {:ok, %__MODULE__{reporters: reporters}}
   end
 
   @doc false
@@ -65,9 +64,8 @@ defmodule Rollbax.Logger do
     {:ok, state}
   end
 
-  def handle_event({level, _gl, event}, %__MODULE__{} = state) do
-    %{reporters: reporters, report_regular_logs: report_regular_logs?} = state
-    :ok = run_reporters(reporters, level, event, report_regular_logs?)
+  def handle_event({level, _gl, event}, %__MODULE__{reporters: reporters} = state) do
+    :ok = run_reporters(reporters, level, event)
     {:ok, state}
   end
 
@@ -91,37 +89,21 @@ defmodule Rollbax.Logger do
     {:ok, state}
   end
 
-  defp run_reporters([reporter | rest], level, event, report_regular_logs?) do
+  defp run_reporters([reporter | rest], level, event) do
     case reporter.handle_event(level, event) do
       %Rollbax.Exception{} = exception ->
         Rollbax.report_exception(exception)
       :next ->
-        run_reporters(rest, level, event, report_regular_logs?)
+        run_reporters(rest, level, event)
       :ignore ->
         :ok
     end
   end
 
-  defp run_reporters([], _level, _event, _report_regular_logs? = false) do
-    :ok
-  end
-
   # If no reporter ignored or reported this event, then we're gonna report this
   # as a Rollbar "message" with the same logic that Logger uses to translate
   # messages (so that it will have Elixir syntax when reported).
-  defp run_reporters([], level, event, _report_regular_logs? = true) do
-    if message = format_event(level, event) do
-      Rollbax.report_message(:error, message)
-    end
-
+  defp run_reporters([], _level, _event) do
     :ok
   end
-
-  defp format_event(:error, {_pid, format, args}),
-    do: :io_lib.format(format, args)
-  defp format_event(:error_report, {_pid, type, format})
-       when type in [:std_error, :supervisor_report, :crash_report],
-    do: inspect(format)
-  defp format_event(_type, _data),
-    do: nil
 end

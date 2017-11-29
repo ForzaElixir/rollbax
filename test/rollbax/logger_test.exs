@@ -18,8 +18,6 @@ defmodule Rollbax.LoggerTest do
       Application.delete_env(:rollbax, :reporters)
     end
 
-    Application.put_env(:rollbax, :report_regular_logs, context[:report_regular_logs] || false)
-
     :error_logger.add_report_handler(Rollbax.Logger)
 
     on_exit(fn ->
@@ -331,33 +329,6 @@ defmodule Rollbax.LoggerTest do
       spawn(fn -> raise "oops" end)
       refute_receive {:api_request, _body}
     end)
-  end
-
-  @tag reporters: []
-  @tag report_regular_logs: true
-  test "if no reporters are provided, events are reported as messages, not exceptions" do
-    defmodule Elixir.MyGenServer do
-      use GenServer
-
-      def handle_cast(:stop, state) do
-        raise "oops"
-        {:noreply, state}
-      end
-    end
-
-    {:ok, gen_server} = GenServer.start(MyGenServer, {})
-
-    capture_log(fn ->
-      GenServer.cast(gen_server, :stop)
-      data = assert_performed_request()["data"]
-
-      message = data["body"]["message"]
-      assert message["body"] =~ ~r/Generic server <.*> terminating/
-      assert message["body"] =~ "'Elixir.RuntimeError'"
-      assert message["body"] =~ "<<\"oops\">>"
-    end)
-  after
-    purge_module(MyGenServer)
   end
 
   defp assert_performed_request() do
