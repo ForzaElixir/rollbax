@@ -5,6 +5,7 @@ defmodule Rollbax.Item do
   # Refer to https://rollbar.com/docs/api/items_post for documentation on such
   # payload.
 
+  @spec draft(String.t, String.t, map) :: map
   def draft(token, environment, custom) do
     data = %{
       "server" => %{
@@ -22,6 +23,7 @@ defmodule Rollbax.Item do
     }
   end
 
+  @spec compose(map, {String.t, pos_integer, map, map, map}) :: map
   def compose(draft, {level, timestamp, body, custom, occurrence_data}) do
     Map.update!(draft, "data", fn data ->
       data
