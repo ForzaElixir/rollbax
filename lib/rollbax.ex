@@ -178,7 +178,7 @@ defmodule Rollbax do
   def report_message(level, message, custom \\ %{}, occurrence_data \\ %{})
       when level in @allowed_message_levels and is_map(custom) and is_map(occurrence_data) do
     body = message |> IO.chardata_to_string() |> Rollbax.Item.message_body()
-    Rollbax.Client.emit(level, unix_time(), body, custom, occurrence_data)
+    Rollbax.Client.emit(level, System.system_time(:seconds), body, custom, occurrence_data)
   end
 
   @doc false
@@ -187,7 +187,7 @@ defmodule Rollbax do
     %{class: class, message: message, stacktrace: stacktrace,
       custom: custom, occurrence_data: occurrence_data} = exception
     body = Rollbax.Item.exception_body(class, message, stacktrace)
-    Rollbax.Client.emit(:error, unix_time(), body, custom, occurrence_data)
+    Rollbax.Client.emit(:error, System.system_time(:seconds), body, custom, occurrence_data)
   end
 
   defp resolve_system_env({:system, var}) when is_binary(var) do
@@ -196,10 +196,5 @@ defmodule Rollbax do
 
   defp resolve_system_env(value) do
     value
-  end
-
-  defp unix_time() do
-    {mgsec, sec, _usec} = :os.timestamp()
-    mgsec * 1_000_000 + sec
   end
 end
