@@ -1,6 +1,6 @@
 defmodule Rollbax do
   @moduledoc """
-  This module provides functions to report any kind of exception to
+  This module provides functions to report any kind of exception or message to
   [Rollbar](https://rollbar.com).
 
   ## Configuration
@@ -14,23 +14,26 @@ defmodule Rollbax do
 
   The following is a comprehensive list of configuration options supported by Rollbax:
 
-    * `:access_token` - (binary or `{:system, binary}`) the token needed to access the
-      [Rollbar Items API (POST)](https://rollbar.com/docs/api/items_post/). As of now,
-      Rollbar provides several access tokens for different "parts" of their API: for
-      this configuration option, the "post_server_item" access token is needed.
-    * `:environment` - (binary or `{:system, binary}`) the environment that will
-      be attached to each reported exception.
-    * `:enabled` - (`true | false | :log`) decides whether exception reported
-      with `Rollbax.report/5` are actually reported to Rollbar. If `true`, they
-      are reported; if `false`, `Rollbax.report/5` is basically a no-op; if
-      `:log`, exceptions reported with `Rollbax.report/5` are instead logged to
-      the shell.
-    * `:custom` - (map) a map of any arbitrary metadata you want to attach to
-      every exception reported by Rollbax. If custom data is specified in an
-      individual call to `Rollbax.report/5` it will be merged with the global
-      data, with the individual data taking precedence in case of conflicts.
-      Defaults to `%{}`.
-    * `:api_endpoint` - (binary) the rollbar endpoint to report exceptions to.
+    * `:access_token` - (binary or `{:system, binary}`) the token needed to access the [Rollbar
+      Items API (POST)](https://rollbar.com/docs/api/items_post/). As of now, Rollbar provides
+      several access tokens for different "parts" of their API: for this configuration option, the
+      `"post_server_item"` access token is needed. This option is required only when the
+      `:enabled` option is set to `true`.
+
+    * `:environment` - (binary or `{:system, binary}`) the environment that will be attached to
+      each reported exception.
+
+    * `:enabled` - (`true | false | :log`) decides whether things reported with `report/5` or
+      `report_message/4` are actually reported to Rollbar. If `true`, they are reported; if
+      `false`, `report/5` and `report_message/4` don't do anything; if `:log`, things reported
+      with `report/5` and `report_message/4` are instead logged to the shell.
+
+    * `:custom` - (map) a map of any arbitrary metadata you want to attach to everything reported
+      by Rollbax. If custom data is specified in an individual call to `report/5` or
+      `report_message/5` it will be merged with the global data, with the individual data taking
+      precedence in case of conflicts. Defaults to `%{}`.
+
+    * `:api_endpoint` - (binary) the Rollbar endpoint to report exceptions and messages to.
       Defaults to `https://api.rollbar.com/api/1/item/`.
 
   The `:access_token` and `:environment` options accept a binary or a
@@ -39,9 +42,9 @@ defmodule Rollbax do
 
   ## Logger backend
 
-  Rollbax provides a Logger backend (`Rollbax.Logger`) that reports logged
-  messages to Rollbar; for more information, look at the documenation for
-  `Rollbax.Logger`.
+  Rollbax provides a Logger backend that reports logged messages to Rollbar; this backend is often
+  useful because it allows to report crashes and exits from processes to Rollbar. For more
+  information, look at the documenation for `Rollbax.Logger`.
   """
 
   use Application
@@ -79,10 +82,12 @@ defmodule Rollbax do
   `kind` specifies the kind of exception being reported while `value` specifies
   the value of that exception. `kind` can be:
 
-    * `:error` - reports an exception defined with `defexception`; `value` must
-      be an exception, or this function will raise an `ArgumentError` exception
-    * `:exit` - reports an exit; `value` can be any term
-    * `:throw` - reports a thrown term; `value` can be any term
+    * `:error` - reports an exception defined with `defexception`. `value` must
+      be an exception, or this function will raise an `ArgumentError` exception.
+
+    * `:exit` - reports an exit. `value` can be any term.
+
+    * `:throw` - reports a thrown term. `value` can be any term.
 
   The `custom` and `occurrence_data` arguments can be used to customize metadata
   sent to Rollbar. `custom` is a map of any arbitrary metadata you want to
@@ -95,8 +100,9 @@ defmodule Rollbax do
   (linked above) for what keys are supported and what the corresponding values
   should be.
 
-  This function is *fire-and-forget*: it will always return `:ok` right away and
-  perform the reporting of the given exception in the background.
+  This function is **fire-and-forget**: it will always return `:ok` right away and
+  perform the reporting of the given exception in the background so as to not block
+  the caller.
 
   ## Examples
 
