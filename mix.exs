@@ -9,9 +9,9 @@ defmodule Rollbax.Mixfile do
     [app: :rollbax,
      version: @version,
      elixir: "~> 1.3",
-     build_embedded: Mix.env == :prod,
-     start_permanent: Mix.env == :prod,
-     description: description(),
+     build_embedded: Mix.env() == :prod,
+     start_permanent: Mix.env() == :prod,
+     description: "Exception tracking and logging from Elixir to Rollbar",
      package: package(),
      deps: deps(),
      aliases: [test: "test --no-start"],
@@ -31,19 +31,13 @@ defmodule Rollbax.Mixfile do
   defp deps() do
     [{:hackney, "~> 1.1"},
      {:poison, "~> 1.4 or ~> 2.0 or ~> 3.0"},
-
      {:ex_doc, "~> 0.14", only: :dev},
-
      {:plug, "~> 1.0.0", only: :test},
      {:cowboy, "~> 1.0.0", only: :test}]
   end
 
-  defp description() do
-    "Exception tracking and logging from Elixir to Rollbar"
-  end
-
   defp package() do
-    [maintainers: ["Aleksei Magusev", "Andrea Leopardi"],
+    [maintainers: ["Aleksei Magusev", "Andrea Leopardi", "Eric Meadows-Jönsson"],
      licenses: ["ISC"],
      links: %{"GitHub" => "https://github.com/elixir-addicts/rollbax"}]
   end
