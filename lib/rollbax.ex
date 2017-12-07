@@ -69,12 +69,11 @@ defmodule Rollbax do
 
   use Application
 
-  @default_api_endpoint "https://api.rollbar.com/api/1/item/"
   @allowed_message_levels [:critical, :error, :warning, :info, :debug]
 
   @doc false
   def start(_type, _args) do
-    config = read_config()
+    config = init_config()
 
     if config[:enabled] == true and is_nil(config[:access_token]) do
       raise ArgumentError, ":access_token is required when :enabled is true"
@@ -93,22 +92,14 @@ defmodule Rollbax do
     Supervisor.start_link(children, strategy: :one_for_one)
   end
 
-  defp read_config() do
-    environment = Application.get_env(:rollbax, :environment)
-    access_token = Application.get_env(:rollbax, :access_token)
-
-    config = [
-      enabled: Application.get_env(:rollbax, :enabled, true),
-      custom: Application.get_env(:rollbax, :custom, %{}),
-      api_endpoint: Application.get_env(:rollbax, :api_endpoint, @default_api_endpoint),
-      enable_crash_reports: Application.get_env(:rollbax, :crash_reports, []),
-      reporters: Application.get_env(:rollbax, :reporters, [Rollbax.Reporter.Standard])
-    ]
+  defp init_config() do
+    env = Application.get_all_env(:rollbax)
 
     config =
-      if(environment, do: [environment: environment], else: []) ++
-      if(access_token, do: [access_token: access_token], else: []) ++
-      config
+      env
+      |> Keyword.take([:enabled, :custom, :api_endpoint, :enable_crash_reports, :reporters])
+      |> put_if_present(:environment, env[:environment])
+      |> put_if_present(:access_token, env[:access_token])
 
     case Application.get_env(:rollbax, :config_callback) do
       {config_callback_mod, config_callback_fun} ->
@@ -117,6 +108,10 @@ defmodule Rollbax do
       nil ->
         config
     end
+  end
+
+  defp put_if_present(keyword, key, value) do
+    if value, do: Keyword.put(keyword, key, value), else: keyword
   end
 
   @doc """
