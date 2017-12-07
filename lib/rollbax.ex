@@ -14,14 +14,13 @@ defmodule Rollbax do
 
   The following is a comprehensive list of configuration options supported by Rollbax:
 
-    * `:access_token` - (binary or `{:system, binary}`) the token needed to access the [Rollbar
+    * `:access_token` - (binary or `nil`) the token needed to access the [Rollbar
       Items API (POST)](https://rollbar.com/docs/api/items_post/). As of now, Rollbar provides
       several access tokens for different "parts" of their API: for this configuration option, the
       `"post_server_item"` access token is needed. This option is required only when the
-      `:enabled` option is set to `true`.
+      `:enabled` option is set to `true`, and can be `nil` otherwise.
 
-    * `:environment` - (binary or `{:system, binary}`) the environment that will be attached to
-      each reported exception.
+    * `:environment` - (binary) the environment that will be attached to each reported exception.
 
     * `:enabled` - (`true | false | :log`) decides whether things reported with `report/5` or
       `report_message/4` are actually reported to Rollbar. If `true`, they are reported; if
@@ -44,6 +43,24 @@ defmodule Rollbax do
   `{:system, "VAR_NAME"}` tuple. When given a tuple like `{:system, "VAR_NAME"}`,
   the value will be referenced from `System.get_env("VAR_NAME")` at runtime.
 
+  ## Runtime configuration
+
+  Configuration can be modified at runtime by providing a configuration callback, like this:
+
+      config :rollbax,
+        config_callback: {MyModule, :my_function}
+
+  In the example above, `MyModule.my_function/1` will be called with the existing configuration as
+  an argument. It's supposed to return a keyword list representing a possibly modified
+  configuration. This can for example be used to read system environment variables at runtime when
+  the application starts:
+
+      defmodule MyModule do
+        def my_function(config) do
+          Keyword.put(config, :access_token, System.get_env("ROLLBAR_ACCESS_TOKEN"))
+        end
+      end
+
   ## Logger backend
 
   Rollbax provides a module that reports logged crashes and exits to Rollbar. For more
@@ -52,31 +69,49 @@ defmodule Rollbax do
 
   use Application
 
-  @default_api_endpoint "https://api.rollbar.com/api/1/item/"
   @allowed_message_levels [:critical, :error, :warning, :info, :debug]
 
   @doc false
   def start(_type, _args) do
-    enabled = Application.get_env(:rollbax, :enabled, true)
-    custom = Application.get_env(:rollbax, :custom, %{})
-    api_endpoint = Application.get_env(:rollbax, :api_endpoint, @default_api_endpoint)
-    environment = resolve_system_env(Application.fetch_env!(:rollbax, :environment))
+    config = init_config()
 
-    access_token =
-      case enabled do
-        true -> resolve_system_env(Application.fetch_env!(:rollbax, :access_token))
-        _other -> :not_needed
-      end
+    if config[:enabled] == true and is_nil(config[:access_token]) do
+      raise ArgumentError, ":access_token is required when :enabled is true"
+    end
 
-    if Application.get_env(:rollbax, :crash_reports, [])[:enabled] do
+    if config[:enable_crash_reports] do
+      # We do this because the handler will read `:repoters` out of the app's environment.
+      Application.put_env(:rollbax, :reporters, config[:reporters])
       :error_logger.add_report_handler(Rollbax.Logger)
     end
 
     children = [
-      Supervisor.Spec.worker(Rollbax.Client, [api_endpoint, access_token, environment, enabled, custom])
+      Supervisor.Spec.worker(Rollbax.Client, [config])
     ]
 
     Supervisor.start_link(children, strategy: :one_for_one)
+  end
+
+  defp init_config() do
+    env = Application.get_all_env(:rollbax)
+
+    config =
+      env
+      |> Keyword.take([:enabled, :custom, :api_endpoint, :enable_crash_reports, :reporters])
+      |> put_if_present(:environment, env[:environment])
+      |> put_if_present(:access_token, env[:access_token])
+
+    case Application.get_env(:rollbax, :config_callback) do
+      {config_callback_mod, config_callback_fun} ->
+        apply(config_callback_mod, config_callback_fun, [config])
+
+      nil ->
+        config
+    end
+  end
+
+  defp put_if_present(keyword, key, value) do
+    if value, do: Keyword.put(keyword, key, value), else: keyword
   end
 
   @doc """
@@ -191,13 +226,5 @@ defmodule Rollbax do
       custom: custom, occurrence_data: occurrence_data} = exception
     body = Rollbax.Item.exception_body(class, message, stacktrace)
     Rollbax.Client.emit(:error, System.system_time(:seconds), body, custom, occurrence_data)
-  end
-
-  defp resolve_system_env({:system, var}) when is_binary(var) do
-    System.get_env(var) || raise ArgumentError, "system environment variable #{inspect(var)} is not set"
-  end
-
-  defp resolve_system_env(value) do
-    value
   end
 end

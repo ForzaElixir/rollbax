@@ -23,11 +23,11 @@ defmodule Rollbax.Client do
 
   ## Public API
 
-  def start_link(api_endpoint, access_token, environment, enabled, custom) do
+  def start_link(config) do
     state = %__MODULE__{
-      draft: Item.draft(access_token, environment, custom),
-      url: api_endpoint,
-      enabled: enabled,
+      draft: Item.draft(config[:access_token], config[:environment], config[:custom]),
+      url: config[:api_endpoint],
+      enabled: config[:enabled],
     }
 
     GenServer.start_link(__MODULE__, state, name: @name)

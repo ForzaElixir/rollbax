@@ -3,6 +3,8 @@ defmodule Rollbax.Mixfile do
 
   @version "0.8.2"
 
+  @default_api_endpoint "https://api.rollbar.com/api/1/item/"
+
   def project() do
     [app: :rollbax,
      version: @version,
@@ -22,6 +24,7 @@ defmodule Rollbax.Mixfile do
 
   def application() do
     [applications: [:logger, :hackney, :poison],
+     env: env(),
      mod: {Rollbax, []}]
   end
 
@@ -43,5 +46,13 @@ defmodule Rollbax.Mixfile do
     [maintainers: ["Aleksei Magusev", "Andrea Leopardi"],
      licenses: ["ISC"],
      links: %{"GitHub" => "https://github.com/elixir-addicts/rollbax"}]
+  end
+
+  defp env() do
+    [enabled: true,
+     custom: %{},
+     api_endpoint: @default_api_endpoint,
+     enable_crash_reports: false,
+     reporters: [Rollbax.Reporter.Standard]]
   end
 end
