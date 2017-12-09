@@ -17,41 +17,49 @@ defmodule Rollbax.ClientTest do
 
   describe "emit/5" do
     test "fills in the right data" do
+      body = %{"message" => %{"body" => "pass"}}
       custom = %{foo: "bar"}
-      :ok = Client.emit(:warn, System.system_time(:seconds), %{"message" => %{"body" => "pass"}}, custom, %{})
-      assert_receive {:api_request, body}
-      assert body =~ ~s("access_token":"token1")
-      assert body =~ ~s("environment":"test")
-      assert body =~ ~s("level":"warn")
-      assert body =~ ~s("body":"pass")
-      assert body =~ ~s("foo":"bar")
-      assert body =~ ~s("qux":"custom")
+      :ok = Client.emit(:warn, System.system_time(:seconds), body, custom, %{})
+
+      assert %{
+        "access_token" => "token1",
+        "data" => %{
+          "environment" => "test",
+          "level" => "warn",
+          "body" => %{"message" => %{"body" => "pass"}},
+          "custom" => %{"foo" => "bar", "qux" => "custom"},
+        },
+      } = assert_performed_request()
     end
 
     test "gives precedence to custom values over global ones" do
+      body = %{"message" => %{"body" => "pass"}}
       custom = %{qux: "overridden", quux: "another"}
-      :ok = Client.emit(:warn, System.system_time(:seconds), %{"message" => %{"body" => "pass"}}, custom, %{})
-      assert_receive {:api_request, body}
-      assert Poison.decode!(body)["data"]["custom"] == %{"qux" => "overridden", "quux" => "another"}
+      :ok = Client.emit(:warn, System.system_time(:seconds), body, custom, %{})
+
+      assert assert_performed_request()["data"]["custom"] ==
+               %{"qux" => "overridden", "quux" => "another"}
     end
 
     test "gives precedence to user occurrence data over data from Rollbax" do
       body = %{"message" => %{"body" => "pass"}}
       occurrence_data = %{"server" => %{"host" => "example.net"}}
       :ok = Client.emit(:warn, System.system_time(:seconds), body, _custom = %{}, occurrence_data)
-      assert_receive {:api_request, body}
-      assert Poison.decode!(body)["data"]["server"] == %{"host" => "example.net"}
+
+      assert assert_performed_request()["data"]["server"] == %{"host" => "example.net"}
     end
   end
 
   test "mass sending" do
-    for _ <- 1..60 do
-      :ok = Client.emit(:error, System.system_time(:seconds), %{"message" => %{"body" => "pass"}}, %{}, %{})
-    end
+    body = %{"message" => %{"body" => "pass"}}
 
-    for _ <- 1..60 do
-      assert_receive {:api_request, _body}
-    end
+    Enum.each(1..60, fn _ ->
+      :ok = Client.emit(:error, System.system_time(:seconds), body, %{}, %{})
+    end)
+
+    Enum.each(1..60, fn _ ->
+      assert_performed_request()
+    end)
   end
 
   test "endpoint is down" do
@@ -66,7 +74,7 @@ defmodule Rollbax.ClientTest do
   test "errors from the API are logged" do
     log = capture_log(fn ->
       :ok = Client.emit(:error, System.system_time(:seconds), %{}, %{return_error?: true}, %{})
-      assert_receive {:api_request, _body}
+      assert_performed_request()
     end)
 
     assert log =~ ~s{[error] (Rollbax) unexpected API status: 400}

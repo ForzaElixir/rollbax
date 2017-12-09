@@ -18,37 +18,52 @@ defmodule RollbaxTest do
       stacktrace = [{Test, :report, 2, [file: 'file.exs', line: 16]}]
       exception = RuntimeError.exception("pass")
       :ok = Rollbax.report(:error, exception, stacktrace, %{}, %{uuid: "d4c7"})
-      assert_receive {:api_request, body}
-      assert body =~ ~s("level":"error")
-      assert body =~ ~s("class":"RuntimeError")
-      assert body =~ ~s("message":"pass")
-      assert body =~ ~s("filename":"file.exs")
-      assert body =~ ~s("lineno":16)
-      assert body =~ ~s("method":"Test.report/2")
-      assert body =~ ~s("uuid":"d4c7")
-      refute body =~ ~s("custom")
+
+      assert %{
+        "data" => %{
+          "body" => %{"trace" => trace},
+          "environment" => "test",
+          "level" => "error",
+          "uuid" => "d4c7",
+        }
+      } = assert_performed_request()
+
+      assert trace == %{
+        "exception" => %{
+          "class" => "RuntimeError",
+          "message" => "pass"
+        },
+        "frames" => [%{"filename" => "file.exs", "lineno" => 16, "method" => "Test.report/2"}]
+      }
     end
 
     test "with an error that is not an exception" do
       stacktrace = [{Test, :report, 2, [file: 'file.exs', line: 16]}]
       error = {:badmap, nil}
       :ok = Rollbax.report(:error, error, stacktrace, %{}, %{})
-      assert_receive {:api_request, body}
-      assert body =~ ~s("class":"BadMapError")
-      assert body =~ ~s("message":"expected a map, got: nil")
+
+      assert %{"class" => "BadMapError", "message" => "expected a map, got: nil"} =
+               assert_performed_request()["data"]["body"]["trace"]["exception"]
     end
 
     test "with an exit" do
       stacktrace = [{Test, :report, 2, [file: 'file.exs', line: 16]}]
       :ok = Rollbax.report(:exit, :oops, stacktrace)
-      assert_receive {:api_request, body}
-      assert body =~ ~s("level":"error")
-      assert body =~ ~s("class":"exit")
-      assert body =~ ~s("message":":oops")
-      assert body =~ ~s("filename":"file.exs")
-      assert body =~ ~s("lineno":16)
-      assert body =~ ~s("method":"Test.report/2")
-      refute body =~ ~s("custom")
+
+      assert %{
+        "data" => %{
+          "body" => %{"trace" => trace},
+          "level" => "error",
+        },
+      } = assert_performed_request()
+
+      assert trace == %{
+        "exception" => %{
+          "class" => "exit",
+          "message" => ":oops",
+        },
+        "frames" => [%{"filename" => "file.exs", "lineno" => 16, "method" => "Test.report/2"}],
+      }
     end
 
     test "with an exit where the term is an exception" do
@@ -62,22 +77,28 @@ defmodule RollbaxTest do
 
       :ok = Rollbax.report(:exit, exception, stacktrace, %{}, %{})
 
-      assert_receive {:api_request, body}
-      assert body =~ ~s["class":"exit"]
-      assert body =~ ~s["message":"** (RuntimeError) oops"]
+      assert %{"class" => "exit", "message" => "** (RuntimeError) oops"} =
+               assert_performed_request()["data"]["body"]["trace"]["exception"]
     end
 
     test "with a throw" do
       stacktrace = [{Test, :report, 2, [file: 'file.exs', line: 16]}]
       :ok = Rollbax.report(:throw, :oops, stacktrace)
-      assert_receive {:api_request, body}
-      assert body =~ ~s("level":"error")
-      assert body =~ ~s("class":"throw")
-      assert body =~ ~s("message":":oops")
-      assert body =~ ~s("filename":"file.exs")
-      assert body =~ ~s("lineno":16)
-      assert body =~ ~s("method":"Test.report/2")
-      refute body =~ ~s("custom")
+
+      assert %{
+        "data" => %{
+          "body" => %{"trace" => trace},
+          "level" => "error",
+        },
+      } = assert_performed_request()
+
+      assert trace == %{
+        "exception" => %{
+          "class" => "throw",
+          "message" => ":oops",
+        },
+        "frames" => [%{"filename" => "file.exs", "lineno" => 16, "method" => "Test.report/2"}],
+      }
     end
 
     test "includes stacktraces in the function name if there's an application" do
@@ -90,20 +111,22 @@ defmodule RollbaxTest do
 
       :ok = Rollbax.report(:throw, :oops, stacktrace)
 
-      assert_receive {:api_request, body}
-
-      assert body =~ ~s["method":":crypto.strong_rand_bytes/1 (crypto)"]
-      assert body =~ ~s["method":"List.to_string/1 (elixir)"]
-      assert body =~ ~s["method":"NoApp.for_this_module/3"]
+      assert [
+        %{"method" => ":crypto.strong_rand_bytes/1 (crypto)"},
+        %{"method" => "List.to_string/1 (elixir)"},
+        %{"method" => "NoApp.for_this_module/3"},
+      ] = assert_performed_request()["data"]["body"]["trace"]["frames"]
     end
   end
 
   test "report_message/4" do
     :ok = Rollbax.report_message(:critical, "Everything is on fire!")
 
-    assert_receive {:api_request, body}
-
-    assert body =~ ~s("level":"critical")
-    assert body =~ ~s("body":"Everything is on fire!")
+    assert %{
+      "data" => %{
+        "level" => "critical",
+        "body" => %{"message" => %{"body" => "Everything is on fire!"}},
+      }
+    } = assert_performed_request()
   end
 end

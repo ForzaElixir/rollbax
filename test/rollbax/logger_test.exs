@@ -331,11 +331,6 @@ defmodule Rollbax.LoggerTest do
     end)
   end
 
-  defp assert_performed_request() do
-    assert_receive {:api_request, body}
-    Poison.decode!(body)
-  end
-
   defp find_frames_for_current_file(frames) do
     current_file = Path.relative_to_cwd(__ENV__.file)
     Enum.filter(frames, &(&1["filename"] == current_file))

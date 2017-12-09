@@ -35,6 +35,11 @@ defmodule ExUnit.RollbaxCase do
       Logger.flush()
     end)
   end
+
+  def assert_performed_request() do
+    assert_receive {:api_request, body}
+    Poison.decode!(body)
+  end
 end
 
 defmodule RollbarAPI do
