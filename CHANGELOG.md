@@ -1,5 +1,15 @@
 # Changelog
 
+## v0.9.0-rc.1
+
+* Bump Elixir requirement to 1.3 and higher.
+* Introduce `Rollbax.report_message/4`.
+* Rework logging support. Now `Rollbax.Logger` is not a `Logger` backend, and you cannot send logs to Rollbar automatically via `Logger.*` macros (Rollbar is not a logging aggregation service after all! :stuck_out_tongue:). Use `Rollbax.report_message/4` instead. Check out the documentation for more information on how to use the new `Rollbax.Logger`.
+* Only require the `:access_token` configuration parameter if `:enabled` is true.
+* Add support for customizing the Rollbar API endpoint.
+* Don't override occurrence data provided by the user.
+* Add support for runtime configuration through a callback that can be set with `:config_callback`.
+
 ## v0.8.2
 
 * Made sure that JSON encoding never cause `Rollbax.Client` crashing.

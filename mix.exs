@@ -1,7 +1,7 @@
 defmodule Rollbax.Mixfile do
   use Mix.Project
 
-  @version "0.8.2"
+  @version "0.9.0-rc.1"
 
   @default_api_endpoint "https://api.rollbar.com/api/1/item/"
 
