@@ -70,7 +70,7 @@ defp handle_errors(conn, error) do
       else
         tuple
       end
-    end
+    end |> Map.new()
 
   # Same as the examples above
 end
