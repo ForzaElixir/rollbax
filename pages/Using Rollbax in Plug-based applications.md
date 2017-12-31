@@ -64,7 +64,7 @@ defp handle_errors(conn, error) do
     |> Plug.Conn.fetch_query_params()
 
   params =
-    for {key, _value} = tuple <- conn.params do
+    for {key, _value} = tuple <- conn.params, into: %{} do
       if key in ["password", "password_confirmation"] do
         {key, "[FILTERED]"}
       else
