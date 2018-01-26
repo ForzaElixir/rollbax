@@ -103,7 +103,7 @@ defmodule Rollbax.Item do
   end
 
   defp stacktrace_entry_to_frame({module, fun, arity, location}) when is_list(arity) do
-    method = Exception.format_mfa(module, fun, arity) <> maybe_format_application(module)
+    method = Exception.format_mfa(module, fun, length(arity)) <> maybe_format_application(module)
     args = Enum.map(arity, &inspect/1)
     put_location(%{"method" => method, "args" => args}, location)
   end
