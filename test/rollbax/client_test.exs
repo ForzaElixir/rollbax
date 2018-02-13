@@ -95,8 +95,7 @@ defmodule Rollbax.ClientTest do
         refute_receive {:api_request, _body}
       end)
 
-    assert log =~
-             "[error] (Rollbax) failed to encode report below for reason: invalid byte 0xD0"
+    assert log =~ "[error] (Rollbax) failed to encode report below for reason: invalid byte 0xD0"
 
     assert log =~ ~r"""
            %{"message" => %{"body" => <<208>>}}

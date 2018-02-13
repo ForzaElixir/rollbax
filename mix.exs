@@ -6,7 +6,6 @@ defmodule Rollbax.Mixfile do
   @default_api_endpoint "https://api.rollbar.com/api/1/item/"
 
   def project() do
-
     [
       app: :rollbax,
       version: @version,
