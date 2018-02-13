@@ -95,15 +95,9 @@ defmodule Rollbax.Client do
   ## Helper functions
 
   defp compose_json(draft, event) do
-    item = Item.compose(draft, event)
-    # We use `try/1` here instead of `Poison.decode/1`
-    # since under some circumstances it
-    # still unsafe and will raise an exception.
-    try do
-      {:ok, Poison.encode!(item, iodata: true)}
-    rescue
-      exception -> {:error, exception}
-    end
+    draft
+    |> Item.compose(event)
+    |> Jason.encode_to_iodata()
   end
 
   defp event_to_chardata({level, timestamp, body, custom, occurrence_data}) do
@@ -119,7 +113,7 @@ defmodule Rollbax.Client do
   defp handle_hackney_response(ref, :done, %{hackney_responses: responses} = state) do
     body = responses |> Map.fetch!(ref) |> IO.iodata_to_binary()
 
-    case Poison.decode(body) do
+    case Jason.decode(body) do
       {:ok, %{"err" => 1, "message" => message}} when is_binary(message) ->
         Logger.error("(Rollbax) API returned an error: #{inspect message}")
       {:ok, response} ->

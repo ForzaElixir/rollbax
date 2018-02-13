@@ -38,7 +38,7 @@ defmodule ExUnit.RollbaxCase do
 
   def assert_performed_request() do
     assert_receive {:api_request, body}
-    Poison.decode!(body)
+    Jason.decode!(body)
   end
 end
 
@@ -67,7 +67,7 @@ defmodule RollbarAPI do
     :timer.sleep(30)
     send test, {:api_request, body}
 
-    if get_in(Poison.decode!(body), ["data", "custom", "return_error?"]) do
+    if get_in(Jason.decode!(body), ["data", "custom", "return_error?"]) do
       send_resp(conn, 400, ~s({"err": 1, "message": "that was a bad request"}))
     else
       send_resp(conn, 200, "{}")
