@@ -30,6 +30,8 @@ defmodule Rollbax.LoggerTest do
     defmodule Elixir.MyGenServer do
       use GenServer
 
+      def init(args), do: {:ok, args}
+
       def handle_cast(:raise_elixir, state) do
         Map.fetch!(%{}, :nonexistent_key)
         {:noreply, state}
@@ -64,6 +66,8 @@ defmodule Rollbax.LoggerTest do
     defmodule Elixir.MyGenServer do
       use GenServer
 
+      def init(args), do: {:ok, args}
+
       def handle_cast(:raise_erlang, state) do
         :maps.find(:a_key, [:not_a, %{}])
         {:noreply, state}
@@ -97,6 +101,8 @@ defmodule Rollbax.LoggerTest do
     defmodule Elixir.MyGenServer do
       use GenServer
 
+      def init(args), do: {:ok, args}
+
       def handle_cast(:call_self, state) do
         GenServer.call(self(), {:call, :self})
         {:noreply, state}
@@ -129,6 +135,8 @@ defmodule Rollbax.LoggerTest do
   test "GenServer stopping" do
     defmodule Elixir.MyGenServer do
       use GenServer
+
+      def init(args), do: {:ok, args}
 
       def handle_cast(:stop, state) do
         {:stop, :stop_reason, state}
