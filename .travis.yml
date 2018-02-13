@@ -10,5 +10,5 @@ matrix:
       elixir: 1.6.1
 
 script:
-  - if [[ `elixir -v` = *"1.6"* ]]; then mix format --check-formatted; fi
+  - if [[ $(elixir --version) = *"1.6"* ]]; then mix format --check-formatted; fi
   - mix test --trace
