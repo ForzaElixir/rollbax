@@ -93,8 +93,10 @@ defmodule Rollbax.Logger do
     case reporter.handle_event(level, event) do
       %Rollbax.Exception{} = exception ->
         Rollbax.report_exception(exception)
+
       :next ->
         run_reporters(rest, level, event)
+
       :ignore ->
         :ok
     end

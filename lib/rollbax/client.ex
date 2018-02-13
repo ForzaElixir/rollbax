@@ -27,7 +27,7 @@ defmodule Rollbax.Client do
     state = %__MODULE__{
       draft: Item.draft(config[:access_token], config[:environment], config[:custom]),
       url: config[:api_endpoint],
-      enabled: config[:enabled],
+      enabled: config[:enabled]
     }
 
     GenServer.start_link(__MODULE__, state, name: @name)
@@ -38,7 +38,10 @@ defmodule Rollbax.Client do
       event = {Atom.to_string(level), timestamp, body, custom, occurrence_data}
       GenServer.cast(pid, {:emit, event})
     else
-      Logger.warn("(Rollbax) Trying to report an exception but the :rollbax application has not been started", rollbax: false)
+      Logger.warn(
+        "(Rollbax) Trying to report an exception but the :rollbax application has not been started",
+        rollbax: false
+      )
     end
   end
 
@@ -46,7 +49,7 @@ defmodule Rollbax.Client do
 
   def init(state) do
     Logger.metadata(rollbax: false)
-    :ok = :hackney_pool.start_pool(@hackney_pool, [max_connections: 20])
+    :ok = :hackney_pool.start_pool(@hackney_pool, max_connections: 20)
     {:ok, state}
   end
 
@@ -67,18 +70,25 @@ defmodule Rollbax.Client do
     case compose_json(state.draft, event) do
       {:ok, payload} ->
         opts = [:async, pool: @hackney_pool]
+
         case :hackney.post(state.url, @headers, payload, opts) do
-          {:ok, _ref} -> :ok
+          {:ok, _ref} ->
+            :ok
+
           {:error, reason} ->
             Logger.error("(Rollbax) connection error: #{inspect(reason)}")
         end
+
       {:error, exception} ->
-        Logger.error [
+        Logger.error([
           "(Rollbax) failed to encode report below ",
-          "for reason: ", Exception.message(exception),
-          ?\n, event_to_chardata(event),
-        ]
+          "for reason: ",
+          Exception.message(exception),
+          ?\n,
+          event_to_chardata(event)
+        ])
     end
+
     {:noreply, state}
   end
 
@@ -103,10 +113,14 @@ defmodule Rollbax.Client do
   defp event_to_chardata({level, timestamp, body, custom, occurrence_data}) do
     [
       inspect(body),
-      "\nLevel: ", level,
-      "\nTimestamp: ", Integer.to_string(timestamp),
-      "\nCustom data: ", inspect(custom),
-      "\nOccurrence data: ", inspect(occurrence_data),
+      "\nLevel: ",
+      level,
+      "\nTimestamp: ",
+      Integer.to_string(timestamp),
+      "\nCustom data: ",
+      inspect(custom),
+      "\nOccurrence data: ",
+      inspect(occurrence_data)
     ]
   end
 
@@ -115,17 +129,23 @@ defmodule Rollbax.Client do
 
     case Jason.decode(body) do
       {:ok, %{"err" => 1, "message" => message}} when is_binary(message) ->
-        Logger.error("(Rollbax) API returned an error: #{inspect message}")
+        Logger.error("(Rollbax) API returned an error: #{inspect(message)}")
+
       {:ok, response} ->
-        Logger.debug("(Rollbax) API response: #{inspect response}")
+        Logger.debug("(Rollbax) API response: #{inspect(response)}")
+
       {:error, _} ->
-        Logger.error("(Rollbax) API returned malformed JSON: #{inspect body}")
+        Logger.error("(Rollbax) API returned malformed JSON: #{inspect(body)}")
     end
 
     %{state | hackney_responses: Map.delete(responses, ref)}
   end
 
-  defp handle_hackney_response(ref, {:status, code, description}, %{hackney_responses: responses} = state) do
+  defp handle_hackney_response(
+         ref,
+         {:status, code, description},
+         %{hackney_responses: responses} = state
+       ) do
     if code != 200 do
       Logger.error("(Rollbax) unexpected API status: #{code}/#{description}")
     end

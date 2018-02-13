@@ -4,6 +4,5 @@ defmodule Rollbax.Reporter do
   Rollbar. See `Rollbax.Logger` for more information.
   """
 
-  @callback handle_event(type :: term, event :: term) ::
-            Rollbax.Exception.t | :next | :ignore
+  @callback handle_event(type :: term, event :: term) :: Rollbax.Exception.t() | :next | :ignore
 end
