@@ -3,6 +3,7 @@ defmodule RollbaxTest do
 
   setup_all do
     {:ok, pid} = start_rollbax_client("token1", "test")
+
     on_exit(fn ->
       ensure_rollbax_client_down(pid)
     end)
@@ -20,21 +21,23 @@ defmodule RollbaxTest do
       :ok = Rollbax.report(:error, exception, stacktrace, %{}, %{uuid: "d4c7"})
 
       assert %{
-        "data" => %{
-          "body" => %{"trace" => trace},
-          "environment" => "test",
-          "level" => "error",
-          "uuid" => "d4c7",
-        }
-      } = assert_performed_request()
+               "data" => %{
+                 "body" => %{"trace" => trace},
+                 "environment" => "test",
+                 "level" => "error",
+                 "uuid" => "d4c7"
+               }
+             } = assert_performed_request()
 
       assert trace == %{
-        "exception" => %{
-          "class" => "RuntimeError",
-          "message" => "pass"
-        },
-        "frames" => [%{"filename" => "file.exs", "lineno" => 16, "method" => "Test.report/2"}]
-      }
+               "exception" => %{
+                 "class" => "RuntimeError",
+                 "message" => "pass"
+               },
+               "frames" => [
+                 %{"filename" => "file.exs", "lineno" => 16, "method" => "Test.report/2"}
+               ]
+             }
     end
 
     test "with an error that is not an exception" do
@@ -51,23 +54,26 @@ defmodule RollbaxTest do
       :ok = Rollbax.report(:exit, :oops, stacktrace)
 
       assert %{
-        "data" => %{
-          "body" => %{"trace" => trace},
-          "level" => "error",
-        },
-      } = assert_performed_request()
+               "data" => %{
+                 "body" => %{"trace" => trace},
+                 "level" => "error"
+               }
+             } = assert_performed_request()
 
       assert trace == %{
-        "exception" => %{
-          "class" => "exit",
-          "message" => ":oops",
-        },
-        "frames" => [%{"filename" => "file.exs", "lineno" => 16, "method" => "Test.report/2"}],
-      }
+               "exception" => %{
+                 "class" => "exit",
+                 "message" => ":oops"
+               },
+               "frames" => [
+                 %{"filename" => "file.exs", "lineno" => 16, "method" => "Test.report/2"}
+               ]
+             }
     end
 
     test "with an exit where the term is an exception" do
       stacktrace = [{Test, :report, 2, [file: 'file.exs', line: 16]}]
+
       exception =
         try do
           raise "oops"
@@ -86,19 +92,21 @@ defmodule RollbaxTest do
       :ok = Rollbax.report(:throw, :oops, stacktrace)
 
       assert %{
-        "data" => %{
-          "body" => %{"trace" => trace},
-          "level" => "error",
-        },
-      } = assert_performed_request()
+               "data" => %{
+                 "body" => %{"trace" => trace},
+                 "level" => "error"
+               }
+             } = assert_performed_request()
 
       assert trace == %{
-        "exception" => %{
-          "class" => "throw",
-          "message" => ":oops",
-        },
-        "frames" => [%{"filename" => "file.exs", "lineno" => 16, "method" => "Test.report/2"}],
-      }
+               "exception" => %{
+                 "class" => "throw",
+                 "message" => ":oops"
+               },
+               "frames" => [
+                 %{"filename" => "file.exs", "lineno" => 16, "method" => "Test.report/2"}
+               ]
+             }
     end
 
     test "includes stacktraces in the function name if there's an application" do
@@ -106,16 +114,16 @@ defmodule RollbaxTest do
       stacktrace = [
         {:crypto, :strong_rand_bytes, 1, [file: 'crypto.erl', line: 1]},
         {List, :to_string, 1, [file: 'list.ex', line: 10]},
-        {NoApp, :for_this_module, 3, [file: 'nofile.ex', line: 1]},
+        {NoApp, :for_this_module, 3, [file: 'nofile.ex', line: 1]}
       ]
 
       :ok = Rollbax.report(:throw, :oops, stacktrace)
 
       assert [
-        %{"method" => ":crypto.strong_rand_bytes/1 (crypto)"},
-        %{"method" => "List.to_string/1 (elixir)"},
-        %{"method" => "NoApp.for_this_module/3"},
-      ] = assert_performed_request()["data"]["body"]["trace"]["frames"]
+               %{"method" => ":crypto.strong_rand_bytes/1 (crypto)"},
+               %{"method" => "List.to_string/1 (elixir)"},
+               %{"method" => "NoApp.for_this_module/3"}
+             ] = assert_performed_request()["data"]["body"]["trace"]["frames"]
     end
   end
 
@@ -123,10 +131,10 @@ defmodule RollbaxTest do
     :ok = Rollbax.report_message(:critical, "Everything is on fire!")
 
     assert %{
-      "data" => %{
-        "level" => "critical",
-        "body" => %{"message" => %{"body" => "Everything is on fire!"}},
-      }
-    } = assert_performed_request()
+             "data" => %{
+               "level" => "critical",
+               "body" => %{"message" => %{"body" => "Everything is on fire!"}}
+             }
+           } = assert_performed_request()
   end
 end

@@ -177,10 +177,8 @@ defmodule Rollbax do
   """
   @spec report(:error | :exit | :throw, any, [any], map, map) :: :ok
   def report(kind, value, stacktrace, custom \\ %{}, occurrence_data \\ %{})
-      when kind in [:error, :exit, :throw] and
-           is_list(stacktrace) and
-           is_map(custom) and
-           is_map(occurrence_data) do
+      when kind in [:error, :exit, :throw] and is_list(stacktrace) and is_map(custom) and
+             is_map(occurrence_data) do
     {class, message} = Rollbax.Item.exception_class_and_message(kind, value)
 
     report_exception(%Rollbax.Exception{
@@ -188,7 +186,7 @@ defmodule Rollbax do
       message: message,
       stacktrace: stacktrace,
       custom: custom,
-      occurrence_data: occurrence_data,
+      occurrence_data: occurrence_data
     })
   end
 
@@ -212,7 +210,8 @@ defmodule Rollbax do
       #=> :ok
 
   """
-  @spec report_message(:critical | :error | :warning | :info | :debug, IO.chardata, map, map) :: :ok
+  @spec report_message(:critical | :error | :warning | :info | :debug, IO.chardata(), map, map) ::
+          :ok
   def report_message(level, message, custom \\ %{}, occurrence_data \\ %{})
       when level in @allowed_message_levels and is_map(custom) and is_map(occurrence_data) do
     body = message |> IO.chardata_to_string() |> Rollbax.Item.message_body()
@@ -220,10 +219,16 @@ defmodule Rollbax do
   end
 
   @doc false
-  @spec report_exception(Rollbax.Exception.t) :: :ok
+  @spec report_exception(Rollbax.Exception.t()) :: :ok
   def report_exception(%Rollbax.Exception{} = exception) do
-    %{class: class, message: message, stacktrace: stacktrace,
-      custom: custom, occurrence_data: occurrence_data} = exception
+    %{
+      class: class,
+      message: message,
+      stacktrace: stacktrace,
+      custom: custom,
+      occurrence_data: occurrence_data
+    } = exception
+
     body = Rollbax.Item.exception_body(class, message, stacktrace)
     Rollbax.Client.emit(:error, System.system_time(:seconds), body, custom, occurrence_data)
   end

@@ -25,13 +25,19 @@ defmodule Rollbax.Reporter.Standard do
       custom: %{
         "name" => inspect(name),
         "last_message" => inspect(last_message),
-        "state" => inspect(state),
-      },
+        "state" => inspect(state)
+      }
     }
   end
 
   # Errors in a GenEvent handler.
-  defp handle_error_format('** gen_event handler ' ++ _, [name, manager, last_message, state, reason]) do
+  defp handle_error_format('** gen_event handler ' ++ _, [
+         name,
+         manager,
+         last_message,
+         state,
+         reason
+       ]) do
     {class, message, stacktrace} = format_as_exception(reason, "gen_event handler terminating")
 
     %Rollbax.Exception{
@@ -42,8 +48,8 @@ defmodule Rollbax.Reporter.Standard do
         "name" => inspect(name),
         "manager" => inspect(manager),
         "last_message" => inspect(last_message),
-        "state" => inspect(state),
-      },
+        "state" => inspect(state)
+      }
     }
   end
 
@@ -59,8 +65,8 @@ defmodule Rollbax.Reporter.Standard do
         "name" => inspect(name),
         "started_from" => inspect(starter),
         "function" => inspect(function),
-        "arguments" => inspect(arguments),
-      },
+        "arguments" => inspect(arguments)
+      }
     }
   end
 
@@ -81,8 +87,8 @@ defmodule Rollbax.Reporter.Standard do
       message: Exception.message(exception),
       stacktrace: stacktrace,
       custom: %{
-        "pid" => inspect(pid),
-      },
+        "pid" => inspect(pid)
+      }
     }
   end
 
@@ -103,8 +109,8 @@ defmodule Rollbax.Reporter.Standard do
         "name" => inspect(name),
         "last_event" => inspect(last_event),
         "state" => inspect(state),
-        "data" => inspect(data),
-      },
+        "data" => inspect(data)
+      }
     }
   end
 
@@ -140,6 +146,7 @@ defmodule Rollbax.Reporter.Standard do
     case Exception.normalize(:error, reason, stacktrace) do
       %ErlangError{} ->
         {class, Exception.format_exit(reason), stacktrace}
+
       exception ->
         class = class <> " (" <> inspect(exception.__struct__) <> ")"
         {class, Exception.message(exception), stacktrace}
