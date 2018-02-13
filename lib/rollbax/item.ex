@@ -5,25 +5,25 @@ defmodule Rollbax.Item do
   # Refer to https://rollbar.com/docs/api/items_post for documentation on such
   # payload.
 
-  @spec draft(String.t, String.t, map) :: map
+  @spec draft(String.t(), String.t(), map) :: map
   def draft(token, environment, custom) do
     data = %{
       "server" => %{
-        "host" => host(),
+        "host" => host()
       },
       "environment" => environment,
       "language" => "Elixir v" <> System.version(),
       "platform" => System.otp_release(),
-      "notifier" => notifier(),
+      "notifier" => notifier()
     }
 
     %{
       "access_token" => token,
-      "data" => put_custom(data, custom),
+      "data" => put_custom(data, custom)
     }
   end
 
-  @spec compose(map, {String.t, pos_integer, map, map, map}) :: map
+  @spec compose(map, {String.t(), pos_integer, map, map, map}) :: map
   def compose(draft, {level, timestamp, body, custom, occurrence_data}) do
     Map.update!(draft, "data", fn data ->
       data
@@ -42,16 +42,16 @@ defmodule Rollbax.Item do
   `class` and `message` are strings that will be used as the class and message
   of the reported exception. `stacktrace` is the stacktrace of the error.
   """
-  @spec exception_body(String.t, String.t, [any]) :: map
+  @spec exception_body(String.t(), String.t(), [any]) :: map
   def exception_body(class, message, stacktrace) do
     %{
       "trace" => %{
         "frames" => stacktrace_to_frames(stacktrace),
         "exception" => %{
           "class" => class,
-          "message" => message,
-        },
-      },
+          "message" => message
+        }
+      }
     }
   end
 
@@ -59,7 +59,7 @@ defmodule Rollbax.Item do
   Returns a map representing the body to be used for representing a "message" on
   Rollbar.
   """
-  @spec message_body(String.t) :: map
+  @spec message_body(String.t()) :: map
   def message_body(message) do
     %{"message" => %{"body" => message}}
   end
@@ -70,7 +70,7 @@ defmodule Rollbax.Item do
   `kind` can be one of `:throw`, `:exit`, or `:error`. A `{class, message}`
   tuple is returned.
   """
-  @spec exception_class_and_message(:throw | :exit | :error, any) :: {String.t, String.t}
+  @spec exception_class_and_message(:throw | :exit | :error, any) :: {String.t(), String.t()}
   def exception_class_and_message(kind, value)
 
   def exception_class_and_message(:throw, value) do
@@ -122,6 +122,7 @@ defmodule Rollbax.Item do
     case :application.get_application(module) do
       {:ok, application} ->
         " (" <> Atom.to_string(application) <> ")"
+
       :undefined ->
         ""
     end
@@ -130,6 +131,7 @@ defmodule Rollbax.Item do
   defp put_location(frame, location) do
     if file = location[:file] do
       frame = Map.put(frame, "filename", List.to_string(file))
+
       if line = location[:line] do
         Map.put(frame, "lineno", line)
       else
@@ -156,7 +158,7 @@ defmodule Rollbax.Item do
   defp notifier() do
     %{
       "name" => "Rollbax",
-      "version" => unquote(Mix.Project.config[:version])
+      "version" => unquote(Mix.Project.config()[:version])
     }
   end
 end

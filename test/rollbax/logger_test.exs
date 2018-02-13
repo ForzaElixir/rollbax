@@ -48,9 +48,9 @@ defmodule Rollbax.LoggerTest do
 
     # Check the exception.
     assert data["body"]["trace"]["exception"] == %{
-      "class" => "GenServer terminating (KeyError)",
-      "message" => "key :nonexistent_key not found in: %{}",
-    }
+             "class" => "GenServer terminating (KeyError)",
+             "message" => "key :nonexistent_key not found in: %{}"
+           }
 
     assert [frame] = find_frames_for_current_file(data["body"]["trace"]["frames"])
     assert frame["method"] == "MyGenServer.handle_cast/2"
@@ -83,9 +83,9 @@ defmodule Rollbax.LoggerTest do
     data = assert_performed_request()["data"]
 
     assert data["body"]["trace"]["exception"] == %{
-      "class" => "GenServer terminating (BadMapError)",
-      "message" => "expected a map, got: [:not_a, %{}]"
-    }
+             "class" => "GenServer terminating (BadMapError)",
+             "message" => "expected a map, got: [:not_a, %{}]"
+           }
 
     assert [frame] = find_frames_for_current_file(data["body"]["trace"]["frames"])
     assert frame["method"] == "MyGenServer.handle_cast/2"
@@ -153,9 +153,9 @@ defmodule Rollbax.LoggerTest do
 
     # Check the exception.
     assert data["body"]["trace"]["exception"] == %{
-      "class" => "GenServer terminating (stop)",
-      "message" => ":stop_reason",
-    }
+             "class" => "GenServer terminating (stop)",
+             "message" => ":stop_reason"
+           }
 
     assert data["body"]["trace"]["frames"] == []
 
@@ -192,19 +192,19 @@ defmodule Rollbax.LoggerTest do
 
       # Check the exception.
       assert data["body"]["trace"]["exception"] == %{
-        "class" => "gen_event handler terminating (RuntimeError)",
-        "message" => "oops",
-      }
+               "class" => "gen_event handler terminating (RuntimeError)",
+               "message" => "oops"
+             }
 
       assert [frame] = find_frames_for_current_file(data["body"]["trace"]["frames"])
       assert frame["method"] == "MyGenEventHandler.handle_event/2"
 
       assert data["custom"] == %{
-        "name" => "MyGenEventHandler",
-        "manager" => inspect(manager),
-        "last_message" => ":raise_error",
-        "state" => "{}",
-      }
+               "name" => "MyGenEventHandler",
+               "manager" => inspect(manager),
+               "last_message" => ":raise_error",
+               "state" => "{}"
+             }
     end)
   after
     purge_module(MyGenEventHandler)
@@ -217,12 +217,14 @@ defmodule Rollbax.LoggerTest do
       data = assert_performed_request()["data"]
 
       assert data["body"]["trace"]["exception"] == %{
-        "class" => "error in process (RuntimeError)",
-        "message" => "oops",
-      }
+               "class" => "error in process (RuntimeError)",
+               "message" => "oops"
+             }
 
       assert [frame] = find_frames_for_current_file(data["body"]["trace"]["frames"])
-      assert frame["method"] =~ ~r[anonymous fn/0 in Rollbax.LoggerTest.(\")?test process raising an error(\")?/1]
+
+      assert frame["method"] =~
+               ~r[anonymous fn/0 in Rollbax.LoggerTest.(\")?test process raising an error(\")?/1]
 
       assert data["custom"] == %{"pid" => inspect(pid)}
     end)
@@ -235,12 +237,14 @@ defmodule Rollbax.LoggerTest do
       data = assert_performed_request()["data"]
 
       assert data["body"]["trace"]["exception"] == %{
-        "class" => "Task terminating (RuntimeError)",
-        "message" => "oops",
-      }
+               "class" => "Task terminating (RuntimeError)",
+               "message" => "oops"
+             }
 
       assert [frame] = find_frames_for_current_file(data["body"]["trace"]["frames"])
-      assert frame["method"] =~ ~r[anonymous fn/0 in Rollbax.LoggerTest.(\")?test task with anonymous function raising an error(\")?/1]
+
+      assert frame["method"] =~
+               ~r[anonymous fn/0 in Rollbax.LoggerTest.(\")?test task with anonymous function raising an error(\")?/1]
 
       assert data["custom"]["name"] == inspect(task)
       assert data["custom"]["function"] =~ ~r/\A#Function<.* in Rollbax\.LoggerTest/
@@ -259,19 +263,19 @@ defmodule Rollbax.LoggerTest do
       data = assert_performed_request()["data"]
 
       assert data["body"]["trace"]["exception"] == %{
-        "class" => "Task terminating (RuntimeError)",
-        "message" => "my message",
-      }
+               "class" => "Task terminating (RuntimeError)",
+               "message" => "my message"
+             }
 
       assert [frame] = find_frames_for_current_file(data["body"]["trace"]["frames"])
       assert frame["method"] == "MyModule.raise_error/1"
 
       assert data["custom"] == %{
-        "name" => inspect(task),
-        "function" => "&MyModule.raise_error/1",
-        "arguments" => ~s(["my message"]),
-        "started_from" => inspect(self()),
-      }
+               "name" => inspect(task),
+               "function" => "&MyModule.raise_error/1",
+               "arguments" => ~s(["my message"]),
+               "started_from" => inspect(self())
+             }
     end)
   after
     purge_module(MyModule)
@@ -303,19 +307,19 @@ defmodule Rollbax.LoggerTest do
 
         # Check the exception.
         assert data["body"]["trace"]["exception"] == %{
-          "class" => "State machine terminating (BadMapError)",
-          "message" => "expected a map, got: []",
-        }
+                 "class" => "State machine terminating (BadMapError)",
+                 "message" => "expected a map, got: []"
+               }
 
         assert [frame] = find_frames_for_current_file(data["body"]["trace"]["frames"])
         assert frame["method"] == "MyGenFsm.idle/2"
 
         assert data["custom"] == %{
-          "last_event" => ":error",
-          "name" => inspect(gen_fsm),
-          "state" => ":idle",
-          "data" => "{}",
-        }
+                 "last_event" => ":error",
+                 "name" => inspect(gen_fsm),
+                 "state" => ":idle",
+                 "data" => "{}"
+               }
       end)
     after
       purge_module(MyGenFsm)
@@ -323,7 +327,7 @@ defmodule Rollbax.LoggerTest do
   end
 
   test "when the endpoint is down, no logs are reported" do
-    :ok = RollbarAPI.stop
+    :ok = RollbarAPI.stop()
 
     capture_log(fn ->
       spawn(fn -> raise "oops" end)

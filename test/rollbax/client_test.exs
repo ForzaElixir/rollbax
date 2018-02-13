@@ -5,6 +5,7 @@ defmodule Rollbax.ClientTest do
 
   setup_all do
     {:ok, pid} = start_rollbax_client("token1", "test", %{qux: "custom"})
+
     on_exit(fn ->
       ensure_rollbax_client_down(pid)
     end)
@@ -22,14 +23,14 @@ defmodule Rollbax.ClientTest do
       :ok = Client.emit(:warn, System.system_time(:seconds), body, custom, %{})
 
       assert %{
-        "access_token" => "token1",
-        "data" => %{
-          "environment" => "test",
-          "level" => "warn",
-          "body" => %{"message" => %{"body" => "pass"}},
-          "custom" => %{"foo" => "bar", "qux" => "custom"},
-        },
-      } = assert_performed_request()
+               "access_token" => "token1",
+               "data" => %{
+                 "environment" => "test",
+                 "level" => "warn",
+                 "body" => %{"message" => %{"body" => "pass"}},
+                 "custom" => %{"foo" => "bar", "qux" => "custom"}
+               }
+             } = assert_performed_request()
     end
 
     test "gives precedence to custom values over global ones" do
@@ -63,37 +64,46 @@ defmodule Rollbax.ClientTest do
   end
 
   test "endpoint is down" do
-    :ok = RollbarAPI.stop
-    log = capture_log(fn ->
-      :ok = Client.emit(:error, System.system_time(:seconds), %{"message" => %{"body" => "miss"}}, %{}, %{})
-    end)
+    :ok = RollbarAPI.stop()
+
+    log =
+      capture_log(fn ->
+        payload = %{"message" => %{"body" => "miss"}}
+        :ok = Client.emit(:error, System.system_time(:seconds), payload, %{}, %{})
+      end)
+
     assert log =~ "[error] (Rollbax) connection error: :econnrefused"
     refute_receive {:api_request, _body}
   end
 
   test "errors from the API are logged" do
-    log = capture_log(fn ->
-      :ok = Client.emit(:error, System.system_time(:seconds), %{}, %{return_error?: true}, %{})
-      assert_performed_request()
-    end)
+    log =
+      capture_log(fn ->
+        :ok = Client.emit(:error, System.system_time(:seconds), %{}, %{return_error?: true}, %{})
+        assert_performed_request()
+      end)
 
     assert log =~ ~s{[error] (Rollbax) unexpected API status: 400}
     assert log =~ ~s{[error] (Rollbax) API returned an error: "that was a bad request"}
   end
 
   test "invalid item failure" do
-    log = capture_log(fn ->
-      :ok = Client.emit(:error, System.system_time(:seconds), %{"message" => %{"body" => <<208>>}}, %{}, %{})
-      refute_receive {:api_request, _body}
-    end)
+    log =
+      capture_log(fn ->
+        payload = %{"message" => %{"body" => <<208>>}}
+        :ok = Client.emit(:error, System.system_time(:seconds), payload, %{}, %{})
+        refute_receive {:api_request, _body}
+      end)
 
-    assert log =~ "[error] (Rollbax) failed to encode report below for reason: unable to encode value: <<208>>"
+    assert log =~
+             "[error] (Rollbax) failed to encode report below for reason: unable to encode value: <<208>>"
+
     assert log =~ ~r"""
-    %{"message" => %{"body" => <<208>>}}
-    Level: error
-    Timestamp: \d+
-    Custom data: %{}
-    Occurrence data: %{}
-    """
+           %{"message" => %{"body" => <<208>>}}
+           Level: error
+           Timestamp: \d+
+           Custom data: %{}
+           Occurrence data: %{}
+           """
   end
 end

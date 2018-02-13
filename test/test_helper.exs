@@ -5,7 +5,7 @@ ExUnit.start()
 defmodule ExUnit.RollbaxCase do
   use ExUnit.CaseTemplate
 
-  using(_) do
+  using _ do
     quote do
       import unquote(__MODULE__)
     end
@@ -23,6 +23,7 @@ defmodule ExUnit.RollbaxCase do
 
   def ensure_rollbax_client_down(pid) do
     ref = Process.monitor(pid)
+
     receive do
       {:DOWN, ^ref, _, _, _} -> :ok
     end
@@ -65,7 +66,7 @@ defmodule RollbarAPI do
   def call(%Conn{method: "POST"} = conn, test) do
     {:ok, body, conn} = read_body(conn)
     :timer.sleep(30)
-    send test, {:api_request, body}
+    send(test, {:api_request, body})
 
     if get_in(Poison.decode!(body), ["data", "custom", "return_error?"]) do
       send_resp(conn, 400, ~s({"err": 1, "message": "that was a bad request"}))
