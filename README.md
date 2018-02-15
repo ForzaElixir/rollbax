@@ -11,19 +11,11 @@ Add Rollbax as a dependency to your `mix.exs` file:
 
 ```elixir
 defp deps() do
-  [{:rollbax, "~> 0.6"}]
+  [{:rollbax, ">= 0.0.0"}]
 end
 ```
 
-and add it to your list of applications:
-
-```elixir
-def application() do
-  [applications: [:rollbax]]
-end
-```
-
-Then run `mix deps.get` in your shell to fetch the dependencies.
+Then run `mix deps.get` in your shell to fetch the dependencies. Add `:rollbax` to your list of `:applications` if you're not using `:extra_applications`.
 
 ## Usage
 
@@ -48,28 +40,12 @@ end
 
 For detailed information on configuration and usage, take a look at the [online documentation](http://hexdocs.pm/rollbax).
 
-### Logger backend
+### Crash reports
 
-Rollbax provides a backend for Elixir's `Logger` as the `Rollbax.Logger` module. It can be configured as follows:
-
-```elixir
-# We register Rollbax.Logger as a Logger backend.
-config :logger,
-  backends: [Rollbax.Logger]
-
-# We configure the Rollbax.Logger backend.
-config :logger, Rollbax.Logger,
-  level: :error
-```
-
-Sending logged messages to Rollbar can be disabled via `Logger` metadata:
+Rollbax provides a way to automatically report crashes from OTP processes (GenServers, Tasks, and so on). It can be enabled with:
 
 ```elixir
-# To disable reporting for all subsequent logs:
-Logger.metadata(rollbar: false)
-
-# To disable reporting for the current logged message only:
-Logger.error("oops", rollbar: false)
+config :rollbax, enable_crash_reports: true
 ```
 
 For more information, check out the documentation for [`Rollbax.Logger`](http://hexdocs.pm/rollbax/Rollbax.Logger.html).
