@@ -80,7 +80,7 @@ defmodule Rollbax do
     end
 
     if config[:enable_crash_reports] do
-      # We do this because the handler will read `:repoters` out of the app's environment.
+      # We do this because the handler will read `:reporters` out of the app's environment.
       Application.put_env(:rollbax, :reporters, config[:reporters])
       :error_logger.add_report_handler(Rollbax.Logger)
     end
