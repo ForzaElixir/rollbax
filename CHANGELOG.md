@@ -1,6 +1,6 @@
 # Changelog
 
-## v0.9.0-rc.1
+## v0.9.0
 
 * Bump Elixir requirement to 1.3 and higher.
 * Introduce `Rollbax.report_message/4`.
