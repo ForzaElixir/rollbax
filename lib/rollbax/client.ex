@@ -33,7 +33,9 @@ defmodule Rollbax.Client do
     GenServer.start_link(__MODULE__, state, name: @name)
   end
 
-  def emit(level, timestamp, body, custom, occurrence_data) do
+  def emit(level, timestamp, body, custom, occurrence_data)
+      when is_atom(level) and is_integer(timestamp) and timestamp > 0 and is_map(body) and
+             is_map(custom) and is_map(occurrence_data) do
     if pid = Process.whereis(@name) do
       event = {Atom.to_string(level), timestamp, body, custom, occurrence_data}
       GenServer.cast(pid, {:emit, event})

@@ -6,7 +6,8 @@ defmodule Rollbax.Item do
   # payload.
 
   @spec draft(String.t(), String.t(), map) :: map
-  def draft(token, environment, custom) do
+  def draft(token, environment, custom)
+      when is_binary(token) and is_binary(environment) and is_map(custom) do
     data = %{
       "server" => %{
         "host" => host()
@@ -24,7 +25,9 @@ defmodule Rollbax.Item do
   end
 
   @spec compose(map, {String.t(), pos_integer, map, map, map}) :: map
-  def compose(draft, {level, timestamp, body, custom, occurrence_data}) do
+  def compose(draft, {level, timestamp, body, custom, occurrence_data})
+      when is_map(draft) and is_binary(level) and is_integer(timestamp) and timestamp > 0 and
+             is_map(body) and is_map(custom) and is_map(occurrence_data) do
     Map.update!(draft, "data", fn data ->
       data
       |> Map.merge(occurrence_data)
@@ -43,7 +46,8 @@ defmodule Rollbax.Item do
   of the reported exception. `stacktrace` is the stacktrace of the error.
   """
   @spec exception_body(String.t(), String.t(), [any]) :: map
-  def exception_body(class, message, stacktrace) do
+  def exception_body(class, message, stacktrace)
+      when is_binary(class) and is_binary(message) and is_list(stacktrace) do
     %{
       "trace" => %{
         "frames" => stacktrace_to_frames(stacktrace),
@@ -60,7 +64,7 @@ defmodule Rollbax.Item do
   Rollbar.
   """
   @spec message_body(String.t()) :: map
-  def message_body(message) do
+  def message_body(message) when is_binary(message) do
     %{"message" => %{"body" => message}}
   end
 
