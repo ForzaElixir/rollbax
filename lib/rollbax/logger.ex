@@ -11,7 +11,9 @@ defmodule Rollbax.Logger do
 
       config :rollbax, :enable_crash_reports, true
 
-  All the configuration options for reporting crashes are documented in detail below.
+  All the configuration options for reporting crashes are documented in detail below. If you are
+  upgrading from an older version of Rollbax that used this module as a logger backend via
+  `config :logger, backends: [:console, Rollbax.Logger]` this config should be removed.
 
   `Rollbax.Logger` implements a mechanism of reporting based on *reporters*, which are modules
   that implement the `Rollbax.Reporter` behaviour. Every message received by `Rollbax.Logger` is
