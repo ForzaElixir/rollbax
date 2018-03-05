@@ -49,6 +49,7 @@ config :rollbax, enable_crash_reports: true
 ```
 
 For more information, check out the documentation for [`Rollbax.Logger`](http://hexdocs.pm/rollbax/Rollbax.Logger.html).
+If you had previously configured the logger with a `Rollbax.Logger` backend e.g. (`config :logger, backends: [:console, Rollbax.Logger]`) you will need to remove this.
 
 ### Plug and Phoenix
 
