@@ -1,5 +1,9 @@
 # Changelog
 
+## v0.9.1
+
+* Fix a bug where we didn't list Jason as an application in the `:applications` key.
+
 ## v0.9.0
 
 * Bump Elixir requirement to 1.3 and higher.

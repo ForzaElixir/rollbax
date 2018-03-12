@@ -1,7 +1,7 @@
 defmodule Rollbax.Mixfile do
   use Mix.Project
 
-  @version "0.9.0"
+  @version "0.9.1"
 
   @default_api_endpoint "https://api.rollbar.com/api/1/item/"
 
@@ -27,7 +27,11 @@ defmodule Rollbax.Mixfile do
   end
 
   def application() do
-    [applications: [:logger, :hackney, :jason], env: env(), mod: {Rollbax, []}]
+    [
+      applications: [:logger, :hackney, :jason],
+      env: env(),
+      mod: {Rollbax, []}
+    ]
   end
 
   defp deps() do
