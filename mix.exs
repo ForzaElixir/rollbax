@@ -27,7 +27,7 @@ defmodule Rollbax.Mixfile do
   end
 
   def application() do
-    [applications: [:logger, :hackney, :poison], env: env(), mod: {Rollbax, []}]
+    [applications: [:logger, :hackney, :jason], env: env(), mod: {Rollbax, []}]
   end
 
   defp deps() do
