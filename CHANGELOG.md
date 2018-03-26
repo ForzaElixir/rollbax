@@ -13,6 +13,7 @@
 * Add support for customizing the Rollbar API endpoint.
 * Don't override occurrence data provided by the user.
 * Add support for runtime configuration through a callback that can be set with `:config_callback`.
+* Drop support for configuring some options through `{:system, variable}` "special" values. The new `:config_callback` configuration option allows to fetch variables from the environment at runtime, so that should be used instead.
 
 ## v0.8.2
 
