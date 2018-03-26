@@ -39,10 +39,6 @@ defmodule Rollbax do
 
     * `:reporters` - see `Rollbax.Logger`.
 
-  The `:access_token` and `:environment` options accept a binary or a
-  `{:system, "VAR_NAME"}` tuple. When given a tuple like `{:system, "VAR_NAME"}`,
-  the value will be referenced from `System.get_env("VAR_NAME")` at runtime.
-
   ## Runtime configuration
 
   Configuration can be modified at runtime by providing a configuration callback, like this:
