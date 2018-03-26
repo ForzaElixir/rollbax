@@ -17,11 +17,11 @@ Rollbax also supports attaching *metadata* to a reported exception as well as ov
 
 ```elixir
 defp handle_errors(conn, %{kind: kind, reason: reason, stack: stacktrace}) do
-  Rollbax.report(kind, reason, stacktrace, %{params: conn.params})
+  Rollbax.report(kind, reason, stacktrace, %{method: conn.method})
 end
 ```
 
-Since Rollbar supports the concept of "request" and "server" in the [Item POST API](https://rollbar.com/docs/api/items_post/), a lot of data that Rollbar will be able to understand can be attached to a reported exceptions. To add data about the host, the request, and more to the exception reported in the snippet above, you could do something like this:
+Since Rollbar supports the concept of "request" and "server" in the [Item POST API](https://rollbar.com/docs/api/items_post/), a lot of data that Rollbar will be able to understand can be attached to a reported exceptions. These data is not referred as "custom data" but rather as **occurrence data**. To add data about the host, the request, and more that Rollbax understands pass them as the `occurrence_data` argument. For example:
 
 ```elixir
 defp handle_errors(conn, %{kind: kind, reason: reason, stack: stacktrace}) do
@@ -30,14 +30,20 @@ defp handle_errors(conn, %{kind: kind, reason: reason, stack: stacktrace}) do
     |> Plug.Conn.fetch_cookies()
     |> Plug.Conn.fetch_query_params()
 
-  conn_data = %{
+  params =
+    case conn.params do
+      %Plug.Conn.Unfetched{aspect: :params} -> "unfetched"
+      other -> other
+    end
+
+  occurrence_data = %{
     "request" => %{
       "cookies" => conn.req_cookies,
       "url" => "#{conn.scheme}://#{conn.host}:#{conn.port}#{conn.request_path}",
       "user_ip" => List.to_string(:inet.ntoa(conn.remote_ip)),
       "headers" => Enum.into(conn.req_headers, %{}),
-      "params" => conn.params,
       "method" => conn.method,
+      "params" => params,
     },
     "server" => %{
       "pid" => System.get_env("MY_SERVER_PID"),
@@ -46,7 +52,7 @@ defp handle_errors(conn, %{kind: kind, reason: reason, stack: stacktrace}) do
     },
   }
 
-  Rollbax.report(kind, reason, stacktrace, %{}, conn_data)
+  Rollbax.report(kind, reason, stacktrace, _custom_data = %{}, occurrence_data)
 end
 ```
 
