@@ -5,9 +5,10 @@ defmodule Rollbax.Item do
   # Refer to https://rollbar.com/docs/api/items_post for documentation on such
   # payload.
 
-  @spec draft(String.t(), String.t(), map) :: map
+  @spec draft(String.t() | nil, String.t() | nil, map) :: map
   def draft(token, environment, custom)
-      when is_binary(token) and is_binary(environment) and is_map(custom) do
+      when (is_binary(token) or is_nil(token)) and (is_binary(environment) or is_nil(environment)) and
+             is_map(custom) do
     data = %{
       "server" => %{
         "host" => host()
