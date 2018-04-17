@@ -1,5 +1,9 @@
 # Changelog
 
+## v0.9.2
+
+* Fix some code that wouldn't let Rollbax start if `:enabled` was `false` but the access token or environment were not set.
+
 ## v0.9.1
 
 * Fix a bug where we didn't list Jason as an application in the `:applications` key.
