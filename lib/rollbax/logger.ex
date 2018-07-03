@@ -30,7 +30,7 @@ defmodule Rollbax.Logger do
       are tried.
 
   The list of reporters can be configured in the `:reporters` key in the `:rollbax` application
-  configuration. By default this list only contains `Rollbax.Reported.Standard` (see its
+  configuration. By default this list only contains `Rollbax.Reporter.Standard` (see its
   documentation for more information). Rollbax also comes equipped with a
   `Rollbax.Reporter.Silencing` reporter that doesn't report anything it receives. For examples on
   how to provide your own reporters, look at the source for `Rollbax.Reporter.Standard`.
