@@ -67,13 +67,6 @@ defmodule Rollbax do
 
   @allowed_message_levels [:critical, :error, :warning, :info, :debug]
 
-  # TODO: remove when we require Elixir v1.4
-  if Version.match?(System.version(), ">= 1.4.0") do
-    @second_time_unit :second
-  else
-    @second_time_unit :seconds
-  end
-
   @doc false
   def start(_type, _args) do
     config = init_config()
@@ -218,8 +211,7 @@ defmodule Rollbax do
   def report_message(level, message, custom \\ %{}, occurrence_data \\ %{})
       when level in @allowed_message_levels and is_map(custom) and is_map(occurrence_data) do
     body = message |> IO.chardata_to_string() |> Rollbax.Item.message_body()
-    timestamp = System.system_time(@second_time_unit)
-    Rollbax.Client.emit(level, timestamp, body, custom, occurrence_data)
+    Rollbax.Client.emit(level, System.system_time(:second), body, custom, occurrence_data)
   end
 
   @doc false
@@ -234,7 +226,6 @@ defmodule Rollbax do
     } = exception
 
     body = Rollbax.Item.exception_body(class, message, stacktrace)
-    timestamp = System.system_time(@second_time_unit)
-    Rollbax.Client.emit(:error, timestamp, body, custom, occurrence_data)
+    Rollbax.Client.emit(:error, System.system_time(:second), body, custom, occurrence_data)
   end
 end
