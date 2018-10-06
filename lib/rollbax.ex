@@ -218,7 +218,8 @@ defmodule Rollbax do
   def report_message(level, message, custom \\ %{}, occurrence_data \\ %{})
       when level in @allowed_message_levels and is_map(custom) and is_map(occurrence_data) do
     body = message |> IO.chardata_to_string() |> Rollbax.Item.message_body()
-    Rollbax.Client.emit(level, System.system_time(@second_time_unit), body, custom, occurrence_data)
+    timestamp = System.system_time(@second_time_unit)
+    Rollbax.Client.emit(level, timestamp, body, custom, occurrence_data)
   end
 
   @doc false
@@ -233,6 +234,7 @@ defmodule Rollbax do
     } = exception
 
     body = Rollbax.Item.exception_body(class, message, stacktrace)
-    Rollbax.Client.emit(:error, System.system_time(@second_time_unit), body, custom, occurrence_data)
+    timestamp = System.system_time(@second_time_unit)
+    Rollbax.Client.emit(:error, timestamp, body, custom, occurrence_data)
   end
 end
