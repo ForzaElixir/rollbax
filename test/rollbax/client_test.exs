@@ -20,7 +20,7 @@ defmodule Rollbax.ClientTest do
     test "fills in the right data" do
       body = %{"message" => %{"body" => "pass"}}
       custom = %{foo: "bar"}
-      :ok = Client.emit(:warn, System.system_time(:seconds), body, custom, %{})
+      :ok = Client.emit(:warn, System.system_time(:second), body, custom, %{})
 
       assert %{
                "access_token" => "token1",
@@ -36,7 +36,7 @@ defmodule Rollbax.ClientTest do
     test "gives precedence to custom values over global ones" do
       body = %{"message" => %{"body" => "pass"}}
       custom = %{qux: "overridden", quux: "another"}
-      :ok = Client.emit(:warn, System.system_time(:seconds), body, custom, %{})
+      :ok = Client.emit(:warn, System.system_time(:second), body, custom, %{})
 
       assert assert_performed_request()["data"]["custom"] ==
                %{"qux" => "overridden", "quux" => "another"}
@@ -45,7 +45,7 @@ defmodule Rollbax.ClientTest do
     test "gives precedence to user occurrence data over data from Rollbax" do
       body = %{"message" => %{"body" => "pass"}}
       occurrence_data = %{"server" => %{"host" => "example.net"}}
-      :ok = Client.emit(:warn, System.system_time(:seconds), body, _custom = %{}, occurrence_data)
+      :ok = Client.emit(:warn, System.system_time(:second), body, _custom = %{}, occurrence_data)
 
       assert assert_performed_request()["data"]["server"] == %{"host" => "example.net"}
     end
@@ -55,7 +55,7 @@ defmodule Rollbax.ClientTest do
     body = %{"message" => %{"body" => "pass"}}
 
     Enum.each(1..60, fn _ ->
-      :ok = Client.emit(:error, System.system_time(:seconds), body, %{}, %{})
+      :ok = Client.emit(:error, System.system_time(:second), body, %{}, %{})
     end)
 
     Enum.each(1..60, fn _ ->
@@ -69,7 +69,7 @@ defmodule Rollbax.ClientTest do
     log =
       capture_log(fn ->
         payload = %{"message" => %{"body" => "miss"}}
-        :ok = Client.emit(:error, System.system_time(:seconds), payload, %{}, %{})
+        :ok = Client.emit(:error, System.system_time(:second), payload, %{}, %{})
       end)
 
     assert log =~ "[error] (Rollbax) connection error: :econnrefused"
@@ -79,7 +79,7 @@ defmodule Rollbax.ClientTest do
   test "errors from the API are logged" do
     log =
       capture_log(fn ->
-        :ok = Client.emit(:error, System.system_time(:seconds), %{}, %{return_error?: true}, %{})
+        :ok = Client.emit(:error, System.system_time(:second), %{}, %{return_error?: true}, %{})
         assert_performed_request()
       end)
 
@@ -91,7 +91,7 @@ defmodule Rollbax.ClientTest do
     log =
       capture_log(fn ->
         payload = %{"message" => %{"body" => <<208>>}}
-        :ok = Client.emit(:error, System.system_time(:seconds), payload, %{}, %{})
+        :ok = Client.emit(:error, System.system_time(:second), payload, %{}, %{})
         refute_receive {:api_request, _body}
       end)
 
