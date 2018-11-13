@@ -19,7 +19,7 @@ defmodule Rollbax.Client do
 
   ## GenServer state
 
-  defstruct [:draft, :url, :enabled, hackney_responses: %{}]
+  defstruct [:draft, :url, :enabled, :proxy, hackney_responses: %{}]
 
   ## Public API
 
@@ -27,7 +27,8 @@ defmodule Rollbax.Client do
     state = %__MODULE__{
       draft: Item.draft(config[:access_token], config[:environment], config[:custom]),
       url: config[:api_endpoint],
-      enabled: config[:enabled]
+      enabled: config[:enabled],
+      proxy: config[:proxy]
     }
 
     GenServer.start_link(__MODULE__, state, name: @name)
@@ -71,7 +72,7 @@ defmodule Rollbax.Client do
   def handle_cast({:emit, event}, %{enabled: true} = state) do
     case compose_json(state.draft, event) do
       {:ok, payload} ->
-        opts = [:async, pool: @hackney_pool]
+        opts = [:async, pool: @hackney_pool, proxy: state.proxy]
 
         case :hackney.post(state.url, @headers, payload, opts) do
           {:ok, _ref} ->
