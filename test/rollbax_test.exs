@@ -137,4 +137,29 @@ defmodule RollbaxTest do
              }
            } = assert_performed_request()
   end
+
+  describe "start/2" do
+    setup do
+      on_exit(fn ->
+        Application.delete_env(:rollbax, :enabled)
+      end)
+    end
+
+    test "when :enabled config value is invalid, it raises" do
+      Application.put_env(:rollbax, :enabled, "invalid_enabled_config_value")
+
+      assert_raise ArgumentError, ":enabled may be only true, false, or :log", fn ->
+        Rollbax.start(nil, nil)
+      end
+    end
+
+    test "when :enabled config value is true but :access_token is nil, it raises" do
+      Application.put_env(:rollbax, :enabled, true)
+      Application.delete_env(:rollbax, :access_token)
+
+      assert_raise ArgumentError, ":access_token is required when :enabled is true", fn ->
+        Rollbax.start(nil, nil)
+      end
+    end
+  end
 end
