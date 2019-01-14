@@ -71,6 +71,10 @@ defmodule Rollbax do
   def start(_type, _args) do
     config = init_config()
 
+    unless config[:enabled] in [true, false, :log] do
+      raise ArgumentError, ":enabled may be only true, false, or :log"
+    end
+
     if config[:enabled] == true and is_nil(config[:access_token]) do
       raise ArgumentError, ":access_token is required when :enabled is true"
     end
