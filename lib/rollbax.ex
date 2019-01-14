@@ -71,7 +71,7 @@ defmodule Rollbax do
   def start(_type, _args) do
     config = init_config()
 
-    unless Enum.member?([true, false, :log, nil], config[:enabled]) do
+    unless config[:enabled] in [true, false, :log] do
       raise ArgumentError, ":enabled may be only true, false, or :log"
     end
 
