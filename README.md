@@ -1,6 +1,6 @@
 # Rollbax
 
-[![Build Status](https://travis-ci.org/elixir-addicts/rollbax.svg?branch=master "Build Status")](https://travis-ci.org/elixir-addicts/rollbax)
+[![Build Status](https://travis-ci.org/ForzaElixir/rollbax.svg?branch=master "Build Status")](https://travis-ci.org/ForzaElixir/rollbax)
 [![Hex Version](https://img.shields.io/hexpm/v/rollbax.svg "Hex Version")](https://hex.pm/packages/rollbax)
 
 Elixir client for [Rollbar](https://rollbar.com).
