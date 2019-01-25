@@ -97,7 +97,14 @@ defmodule Rollbax do
 
     config =
       env
-      |> Keyword.take([:enabled, :custom, :api_endpoint, :enable_crash_reports, :reporters])
+      |> Keyword.take([
+        :enabled,
+        :custom,
+        :api_endpoint,
+        :enable_crash_reports,
+        :reporters,
+        :proxy
+      ])
       |> put_if_present(:environment, env[:environment])
       |> put_if_present(:access_token, env[:access_token])
 
