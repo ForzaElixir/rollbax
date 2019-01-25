@@ -24,7 +24,7 @@ defmodule Rollbax.ClientViaProxyTest do
   end
 
   describe "with proxy" do
-    test "Client send message to proxy server" do
+    test "client send message to proxy server" do
       body = %{"message" => %{"body" => "pass"}}
       occurrence_data = %{"server" => %{"host" => "example.net"}}
       :ok = Client.emit(:warn, System.system_time(:second), body, _custom = %{}, occurrence_data)
