@@ -39,6 +39,10 @@ defmodule Rollbax do
 
     * `:reporters` - see `Rollbax.Logger`.
 
+    * `:proxy` - (binary) a proxy that can be used to connect to the Rollbar host. For more
+      information about the format of the proxy, check the proxy URL description in the
+      [hackney documentation](https://github.com/benoitc/hackney#proxy-a-connection).
+
   ## Runtime configuration
 
   Configuration can be modified at runtime by providing a configuration callback, like this:

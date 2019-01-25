@@ -65,7 +65,7 @@ config :rollbax, enabled: :log
 
 ### Using a proxy to reach the Rollbar server
 
-For environments which requires a proxy to connect hosts outside of the network, the `:proxy` config entry can be added with a _ProxyUrl_ as it's defined by [hackney](https://github.com/benoitc/hackney#proxy-a-connection).
+For environments which require a proxy to connect to hosts outside of the network, the `:proxy` config entry can be added with a proxy URL as it's defined in the [hackney documentation](https://github.com/benoitc/hackney#proxy-a-connection).
 
 ```elixir
 config :rollbax, proxy: "https://my-secure-proxy:5001"
