@@ -1,5 +1,12 @@
 # Changelog
 
+## v0.10.0
+
+* [**BREAKING CHANGE**]: Require Elixir ~> 1.4.
+* Raise on invalid configurations.
+* Allow to configure Rollbax to use a proxy (#105).
+* Use proper time units.
+
 ## v0.9.2
 
 * Fix some code that wouldn't let Rollbax start if `:enabled` was `false` but the access token or environment were not set.
