@@ -75,10 +75,19 @@ defmodule RollbarAPI do
     :timer.sleep(30)
     send(test, {:api_request, body})
 
-    if get_in(Jason.decode!(body), ["data", "custom", "return_error?"]) do
-      send_resp(conn, 400, ~s({"err": 1, "message": "that was a bad request"}))
-    else
-      send_resp(conn, 200, "{}")
+    custom = Jason.decode!(body)["data"]["custom"]
+
+    cond do
+      custom["return_error?"] ->
+        send_resp(conn, 400, ~s({"err": 1, "message": "that was a bad request"}))
+
+      rate_limit_seconds = custom["rate_limit_seconds"] ->
+        conn
+        |> put_resp_header("X-Rate-Limit-Remaining-Seconds", rate_limit_seconds)
+        |> send_resp(429, "{}")
+
+      true ->
+        send_resp(conn, 200, "{}")
     end
   end
 

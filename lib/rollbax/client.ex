@@ -19,7 +19,7 @@ defmodule Rollbax.Client do
 
   ## GenServer state
 
-  defstruct [:draft, :url, :enabled, :hackney_opts, hackney_responses: %{}]
+  defstruct [:draft, :url, :enabled, :hackney_opts, hackney_responses: %{}, rate_limited?: false]
 
   ## Public API
 
@@ -71,6 +71,11 @@ defmodule Rollbax.Client do
     :ok = :hackney_pool.stop_pool(@hackney_pool)
   end
 
+  def handle_cast({:emit, _event}, %{rate_limited?: true} = state) do
+    Logger.info("(Rollbax) ignored report due to rate limiting")
+    {:noreply, state}
+  end
+
   def handle_cast({:emit, _event}, %{enabled: false} = state) do
     {:noreply, state}
   end
@@ -109,6 +114,10 @@ defmodule Rollbax.Client do
     {:noreply, new_state}
   end
 
+  def handle_info(:lift_rate_limit, state) do
+    {:noreply, %{state | rate_limited?: false}}
+  end
+
   def handle_info(message, state) do
     Logger.info("(Rollbax) unexpected message: #{inspect(message)}")
     {:noreply, state}
@@ -137,7 +146,7 @@ defmodule Rollbax.Client do
   end
 
   defp handle_hackney_response(ref, :done, %{hackney_responses: responses} = state) do
-    body = responses |> Map.fetch!(ref) |> IO.iodata_to_binary()
+    {_code, body} = responses |> Map.fetch!(ref)
 
     case Jason.decode(body) do
       {:ok, %{"err" => 1, "message" => message}} when is_binary(message) ->
@@ -162,21 +171,43 @@ defmodule Rollbax.Client do
       Logger.error("(Rollbax) unexpected API status: #{code}/#{description}")
     end
 
-    %{state | hackney_responses: Map.put(responses, ref, [])}
+    %{state | hackney_responses: Map.put(responses, ref, {code, []})}
   end
 
-  defp handle_hackney_response(_ref, {:headers, headers}, state) do
+  defp handle_hackney_response(ref, {:headers, headers}, %{hackney_responses: responses} = state) do
     Logger.debug("(Rollbax) API headers: #{inspect(headers)}")
-    state
+
+    with %{^ref => {429, _body}} <- responses,
+         schedule_rate_limit_lifting(headers) do
+      %{state | rate_limited?: true}
+    else
+      _other -> state
+    end
   end
 
   defp handle_hackney_response(ref, body_chunk, %{hackney_responses: responses} = state)
        when is_binary(body_chunk) do
-    %{state | hackney_responses: Map.update!(responses, ref, &[&1 | body_chunk])}
+    responses =
+      Map.update!(responses, ref, fn {code, body} ->
+        {code, [body | body_chunk]}
+      end)
+
+    %{state | hackney_responses: responses}
   end
 
   defp handle_hackney_response(ref, {:error, reason}, %{hackney_responses: responses} = state) do
     Logger.error("(Rollbax) connection error: #{inspect(reason)}")
     %{state | hackney_responses: Map.delete(responses, ref)}
+  end
+
+  defp schedule_rate_limit_lifting(headers) do
+    with {_, remaining_seconds} when remaining_seconds != nil <-
+           Enum.find(headers, &(elem(&1, 0) == "X-Rate-Limit-Remaining-Seconds")),
+         {remaining_seconds, ""} <- Integer.parse(remaining_seconds) do
+      Process.send_after(self(), :lift_rate_limit, remaining_seconds * 1_000)
+      :ok
+    else
+      _other -> :error
+    end
   end
 end
