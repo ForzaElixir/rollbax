@@ -146,7 +146,7 @@ defmodule Rollbax.Client do
   end
 
   defp handle_hackney_response(ref, :done, %{hackney_responses: responses} = state) do
-    {_code, body} = responses |> Map.fetch!(ref)
+    {_code, body} = Map.fetch!(responses, ref)
 
     case Jason.decode(body) do
       {:ok, %{"err" => 1, "message" => message}} when is_binary(message) ->
