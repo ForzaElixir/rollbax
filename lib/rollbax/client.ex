@@ -178,7 +178,7 @@ defmodule Rollbax.Client do
     Logger.debug("(Rollbax) API headers: #{inspect(headers)}")
 
     with %{^ref => {429, _body}} <- responses,
-         schedule_rate_limit_lifting(headers) do
+         :ok <- schedule_rate_limit_lifting(headers) do
       %{state | rate_limited?: true}
     else
       _other -> state
@@ -202,7 +202,7 @@ defmodule Rollbax.Client do
 
   defp schedule_rate_limit_lifting(headers) do
     with {_, remaining_seconds} when remaining_seconds != nil <-
-           Enum.find(headers, &(elem(&1, 0) == "X-Rate-Limit-Remaining-Seconds")),
+           List.keyfind(headers, "X-Rate-Limit-Remaining-Seconds", 0),
          {remaining_seconds, ""} <- Integer.parse(remaining_seconds) do
       Process.send_after(self(), :lift_rate_limit, remaining_seconds * 1_000)
       :ok
