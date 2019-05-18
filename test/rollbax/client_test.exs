@@ -89,7 +89,7 @@ defmodule Rollbax.ClientTest do
 
     assert_performed_request()
 
-    :timer.sleep(100)
+    Process.sleep(100)
 
     log =
       capture_log(fn ->
@@ -100,7 +100,7 @@ defmodule Rollbax.ClientTest do
 
     refute_receive {:api_request, _body}
 
-    :timer.sleep(1000)
+    Process.sleep(1000)
 
     :ok = Client.emit(:error, System.system_time(:second), body, %{}, %{})
     assert_performed_request()
