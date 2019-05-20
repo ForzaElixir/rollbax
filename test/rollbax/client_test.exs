@@ -96,13 +96,13 @@ defmodule Rollbax.ClientTest do
         :ok = Client.emit(:error, System.system_time(:second), body, %{}, %{})
       end)
 
-    assert log =~ "ignored report due to rate limiting"
-
+    assert log =~ "(Rollbax) ignored report due to rate limiting"
     refute_receive {:api_request, _body}
 
     Process.sleep(1000)
 
     :ok = Client.emit(:error, System.system_time(:second), body, %{}, %{})
+
     assert_performed_request()
   end
 
