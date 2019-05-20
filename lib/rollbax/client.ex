@@ -177,6 +177,8 @@ defmodule Rollbax.Client do
   defp handle_hackney_response(ref, {:headers, headers}, %{hackney_responses: responses} = state) do
     Logger.debug("(Rollbax) API headers: #{inspect(headers)}")
 
+    # It is possible that we receive multiple rate limited responses.
+    # Ideally we should schedule rate limit lifting only once.
     with %{^ref => {429, _body}} <- responses,
          :ok <- schedule_rate_limit_lifting(headers) do
       %{state | rate_limited?: true}
