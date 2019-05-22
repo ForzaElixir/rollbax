@@ -114,7 +114,7 @@ defmodule Rollbax.Client do
     {:noreply, new_state}
   end
 
-  def handle_info(:lift_rate_limit, state) do
+  def handle_info(:lift_rate_limiting, state) do
     {:noreply, %{state | rate_limited?: false}}
   end
 
@@ -206,7 +206,7 @@ defmodule Rollbax.Client do
     with {_, remaining_seconds} when remaining_seconds != nil <-
            List.keyfind(headers, "X-Rate-Limit-Remaining-Seconds", 0),
          {remaining_seconds, ""} <- Integer.parse(remaining_seconds) do
-      Process.send_after(self(), :lift_rate_limit, remaining_seconds * 1_000)
+      Process.send_after(self(), :lift_rate_limiting, remaining_seconds * 1_000)
       :ok
     else
       _other -> :error
