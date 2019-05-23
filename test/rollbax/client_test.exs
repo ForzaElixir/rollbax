@@ -76,6 +76,36 @@ defmodule Rollbax.ClientTest do
     refute_receive {:api_request, _body}
   end
 
+  test "rate limiting" do
+    body = %{"message" => %{"body" => "pass"}}
+
+    log =
+      capture_log(fn ->
+        :ok =
+          Client.emit(:error, System.system_time(:second), body, %{rate_limit_seconds: "1"}, %{})
+      end)
+
+    assert log =~ "unexpected API status: 429/Too Many Requests"
+
+    assert_performed_request()
+
+    Process.sleep(100)
+
+    log =
+      capture_log(fn ->
+        :ok = Client.emit(:error, System.system_time(:second), body, %{}, %{})
+      end)
+
+    assert log =~ "(Rollbax) ignored report due to rate limiting"
+    refute_receive {:api_request, _body}
+
+    Process.sleep(1000)
+
+    :ok = Client.emit(:error, System.system_time(:second), body, %{}, %{})
+
+    assert_performed_request()
+  end
+
   test "errors from the API are logged" do
     log =
       capture_log(fn ->
