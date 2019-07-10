@@ -38,7 +38,7 @@ defmodule Rollbax.Mixfile do
     [
       {:hackney, "~> 1.1"},
       {:jason, "~> 1.0"},
-      {:ex_doc, "~> 0.18", only: :dev},
+      {:ex_doc, "~> 0.18", only: :dev, runtime: false},
       {:plug, "~> 1.4", only: :test},
       {:cowboy, "~> 1.1", only: :test}
     ]
