@@ -1,5 +1,9 @@
 # Changelog
 
+## v0.11.0
+
+* Added handling of rate limiting from the Rollbar API.
+
 ## v0.10.0
 
 * **BREAKING CHANGE**: Increased Elixir version requirement to 1.4 and higher.
