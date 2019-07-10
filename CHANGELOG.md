@@ -2,29 +2,29 @@
 
 ## v0.10.0
 
-* [**BREAKING CHANGE**]: Require Elixir ~> 1.4.
-* Raise on invalid configurations.
-* Allow to configure Rollbax to use a proxy (#105).
-* Use proper time units.
+* **BREAKING CHANGE**: Increased Elixir version requirement to 1.4 and higher.
+* Made invalid configurations raise.
+* Allowed to configure Rollbax to use a proxy (#105).
+* Started using proper time units.
 
 ## v0.9.2
 
-* Fix some code that wouldn't let Rollbax start if `:enabled` was `false` but the access token or environment were not set.
+* Fixed some code that wouldn't let Rollbax start if `:enabled` was `false` but the access token or environment were not set.
 
 ## v0.9.1
 
-* Fix a bug where we didn't list Jason as an application in the `:applications` key.
+* Fixed a bug where we didn't list Jason as an application in the `:applications` key.
 
 ## v0.9.0
 
-* Bump Elixir requirement to 1.3 and higher.
-* Introduce `Rollbax.report_message/4`.
-* Rework logging support. Now `Rollbax.Logger` is not a `Logger` backend, and you cannot send logs to Rollbar automatically via `Logger.*` macros (Rollbar is not a logging aggregation service after all! :stuck_out_tongue:). Use `Rollbax.report_message/4` instead. Check out the documentation for more information on how to use the new `Rollbax.Logger`.
-* Only require the `:access_token` configuration parameter if `:enabled` is true.
-* Add support for customizing the Rollbar API endpoint.
-* Don't override occurrence data provided by the user.
-* Add support for runtime configuration through a callback that can be set with `:config_callback`.
-* Drop support for configuring some options through `{:system, variable}` "special" values. The new `:config_callback` configuration option allows to fetch variables from the environment at runtime, so that should be used instead.
+* **BREAKING CHANGE**: Increased Elixir version requirement to 1.3 and higher.
+* Introduced `Rollbax.report_message/4`.
+* Reworked logging support. Now `Rollbax.Logger` is not a `Logger` backend, and you cannot send logs to Rollbar automatically via `Logger.*` macros (Rollbar is not a logging aggregation service after all! :stuck_out_tongue:). Use `Rollbax.report_message/4` instead. Check out the documentation for more information on how to use the new `Rollbax.Logger`.
+* Made the `:access_token` configuration parameter be only required if `:enabled` is `true`.
+* Added support for customizing the Rollbar API endpoint.
+* Stopped overriding occurrence data provided by the user.
+* Added support for runtime configuration through a callback that can be set with `:config_callback`.
+* Dropped support for configuring some options through `{:system, variable}` "special" values. The new `:config_callback` configuration option allows to fetch variables from the environment at runtime, so that should be used instead.
 
 ## v0.8.2
 
