@@ -9,7 +9,6 @@
 * **BREAKING CHANGE**: Increased Elixir version requirement to 1.4 and higher.
 * Made invalid configurations raise.
 * Allowed to configure Rollbax to use a proxy (#105).
-* Started using proper time units.
 
 ## v0.9.2
 
