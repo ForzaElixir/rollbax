@@ -28,16 +28,16 @@ defmodule Rollbax.Client do
       draft: Item.draft(config[:access_token], config[:environment], config[:custom]),
       url: config[:api_endpoint],
       enabled: config[:enabled],
-      hackney_opts: hackney_opts(config)
+      hackney_opts: build_hackney_opts(config)
     }
 
     GenServer.start_link(__MODULE__, state, name: @name)
   end
 
-  defp hackney_opts(config) do
+  defp build_hackney_opts(config) do
     hackney_extra_opts =
-      if config[:proxy] do
-        [proxy: config[:proxy]]
+      if proxy = config[:proxy] do
+        [proxy: proxy]
       else
         []
       end
