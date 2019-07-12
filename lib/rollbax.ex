@@ -76,7 +76,7 @@ defmodule Rollbax do
     config = init_config()
 
     unless config[:enabled] in [true, false, :log] do
-      raise ArgumentError, ":enabled may be only true, false, or :log"
+      raise ArgumentError, ":enabled may be only one of: true, false, or :log"
     end
 
     if config[:enabled] == true and is_nil(config[:access_token]) do
