@@ -39,7 +39,7 @@ defp handle_errors(conn, %{kind: kind, reason: reason, stack: stacktrace}) do
   occurrence_data = %{
     "request" => %{
       "cookies" => conn.req_cookies,
-      "url" => "#{conn.scheme}://#{conn.host}:#{conn.port}#{conn.request_path}",
+      "url" => Plug.Conn.request_url(conn),
       "user_ip" => List.to_string(:inet.ntoa(conn.remote_ip)),
       "headers" => Enum.into(conn.req_headers, %{}),
       "method" => conn.method,
