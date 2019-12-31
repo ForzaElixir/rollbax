@@ -69,15 +69,28 @@ defp handle_errors(conn, error) do
     |> Plug.Conn.fetch_cookies()
     |> Plug.Conn.fetch_query_params()
 
-  params =
-    for {key, _value} = tuple <- conn.params, into: %{} do
-      if key in ["password", "password_confirmation"] do
-        {key, "[FILTERED]"}
-      else
-        tuple
-      end
-    end
+  params = normalize_params(conn.params)
 
   # Same as the examples above
 end
+
+defp normalize_params(%Plug.Conn.Unfetched{aspect: :params}) do
+  "unfetched"
+end
+
+defp normalize_params(%{} = map) do
+  Enum.into(map, %{}, fn {k, v} ->
+    if is_binary(k) and String.contains?(k, ["password"]) do
+      {k, "[FILTERED]"}
+    else
+      {k, normalize_params(v)}
+    end
+  end)
+end
+
+defp normalize_params([_ | _] = list) do
+  Enum.map(list, &normalize_params/1)
+end
+
+defp normalize_params(other), do: other
 ```
