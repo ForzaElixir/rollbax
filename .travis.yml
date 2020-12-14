@@ -2,8 +2,12 @@ sudo: false
 
 language: elixir
 
-otp_release: '21.1'
-elixir: '1.8'
+elixir:
+  - 1.11.1
+  - 1.8.0
+otp_release:
+  - 23.1.0
+  - 20.0.0
 
 stages:
   - check formatted
@@ -12,9 +16,7 @@ stages:
 jobs:
   include:
     - stage: test
-
-    - otp_release: '18.3'
-      elixir: '1.4'
+      script: mix test
 
     - stage: check formatted
       script: mix format --check-formatted
