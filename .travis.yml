@@ -1,22 +1,22 @@
-sudo: false
-
 language: elixir
-
 elixir:
   - 1.11.1
-  - 1.8.0
 otp_release:
-  - 23.1.0
-  - 20.0.0
+  - 23.1
 
-stages:
-  - check formatted
-  - test
-
-jobs:
+matrix:
   include:
-    - stage: test
-      script: mix test
+    - elixir: 1.11.1
+      otp_release: 23.1
+    - elixir: 1.8.0
+      otp_release: 19.3
 
-    - stage: check formatted
-      script: mix format --check-formatted
+script:
+  - if [[ "$TRAVIS_ELIXIR_VERSION" == "1.11"* ]]; then mix format --check-formatted; fi
+  - mix test
+sudo: false
+dist: trusty
+cache:
+  directories:
+    - _build
+    - deps
