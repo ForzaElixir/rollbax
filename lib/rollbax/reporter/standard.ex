@@ -91,12 +91,13 @@ defmodule Rollbax.Reporter.Standard do
 
         {_, info, stacktrace} when is_tuple(info) ->
           case elem(info, 0) do
-            %class{message: message} -> {inspect(class), message, stacktrace, ""}
-            %class{} -> {inspect(class), inspect(class), stacktrace, ""}
-            atom when is_atom(atom) -> {inspect(atom), inspect(atom), stacktrace, ""}
-            {%class{message: message}, inner_stacktrace} -> {inspect(class), message, inner_stacktrace, ""}
-            {%class{}, inner_stacktrace} -> {inspect(class), inspect(class), inner_stacktrace, ""}
-            {atom, inner_stacktrace} when is_atom(atom) -> {inspect(atom), inspect(atom), inner_stacktrace, ""}
+            %class{message: message} -> {inspect(class), message, stacktrace, inspect(info)}
+            %class{} -> {inspect(class), inspect(class), stacktrace, inspect(info)}
+            atom when is_atom(atom) -> {inspect(atom), inspect(atom), stacktrace, inspect(info)}
+            {%class{message: message}, inner_stacktrace} -> {inspect(class), message, inner_stacktrace, inspect(info)}
+            {%class{}, inner_stacktrace} -> {inspect(class), inspect(class), inner_stacktrace, inspect(info)}
+            {atom, inner_stacktrace} when is_atom(atom) -> {inspect(atom), inspect(atom), inner_stacktrace, inspect(info)}
+            {{%class{message: message}, inner_stacktrace}, _} -> {inspect(class), message, inner_stacktrace, inspect(info)}
             reason -> {"ProcessCrash", "A process crashed", stacktrace, inspect(reason, limit: :infinity)}
           end
       end
