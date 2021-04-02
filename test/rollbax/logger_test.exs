@@ -32,9 +32,8 @@ defmodule Rollbax.LoggerTest do
 
       def init(args), do: {:ok, args}
 
-      def handle_cast(:raise_elixir, state) do
-        Map.fetch!(%{}, :nonexistent_key)
-        {:noreply, state}
+      def handle_cast(:raise_elixir, _state) do
+        Map.fetch!(Map.new(), :nonexistent_key)
       end
     end
 
