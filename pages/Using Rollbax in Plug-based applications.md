@@ -79,11 +79,11 @@ defp normalize_params(%Plug.Conn.Unfetched{aspect: :params}) do
 end
 
 defp normalize_params(%{} = map) do
-  Enum.into(map, %{}, fn {k, v} ->
-    if is_binary(k) and String.contains?(k, ["password"]) do
-      {k, "[FILTERED]"}
+  Enum.into(map, %{}, fn {key, value} ->
+    if is_binary(key) and String.contains?(key, ["password"]) do
+      {key, "[FILTERED]"}
     else
-      {k, normalize_params(v)}
+      {key, normalize_params(value)}
     end
   end)
 end

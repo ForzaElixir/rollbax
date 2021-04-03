@@ -36,7 +36,7 @@ jobs:
       matrix:
         versions:
           - otp: 18.3
-            elixir: 1.4
+            elixir: 1.5
           - otp: 21.3
             elixir: 1.8
 
