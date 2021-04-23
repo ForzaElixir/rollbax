@@ -89,6 +89,9 @@ defmodule Rollbax.Reporter.Standard do
         {_, %class{message: message}, stacktrace} ->
           {inspect(class), message, stacktrace, ""}
 
+        {:exit, reason, stacktrace} when is_atom(reason) ->
+          {inspect(reason), inspect(reason), stacktrace, ""}
+
         {_, info, stacktrace} when is_tuple(info) ->
           case elem(info, 0) do
             %class{message: message} -> {inspect(class), message, stacktrace, inspect(info)}
