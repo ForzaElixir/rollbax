@@ -90,7 +90,7 @@ defmodule Rollbax do
     end
 
     children = [
-      {Rollbax.Client, [config]}
+      {Rollbax.Client, config}
     ]
 
     Supervisor.start_link(children, strategy: :one_for_one)
