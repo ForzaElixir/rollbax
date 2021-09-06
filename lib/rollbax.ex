@@ -235,12 +235,13 @@ defmodule Rollbax do
     %{
       class: class,
       message: message,
+      description: description,
       stacktrace: stacktrace,
       custom: custom,
       occurrence_data: occurrence_data
     } = exception
 
-    body = Rollbax.Item.exception_body(class, message, stacktrace)
+    body = Rollbax.Item.exception_body(class, message, description, stacktrace)
     Rollbax.Client.emit(:error, System.system_time(:second), body, custom, occurrence_data)
   end
 end

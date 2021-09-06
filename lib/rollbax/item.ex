@@ -46,16 +46,17 @@ defmodule Rollbax.Item do
   `class` and `message` are strings that will be used as the class and message
   of the reported exception. `stacktrace` is the stacktrace of the error.
   """
-  @spec exception_body(String.t(), String.t(), [any]) :: map
-  def exception_body(class, message, stacktrace)
+  @spec exception_body(String.t(), String.t(), String.t() | nil, [any]) :: map
+  def exception_body(class, message, description \\ nil, stacktrace)
       when is_binary(class) and is_binary(message) and is_list(stacktrace) do
     %{
       "trace" => %{
         "frames" => stacktrace_to_frames(stacktrace),
         "exception" => %{
           "class" => class,
-          "message" => message
+          "message" => message,
         }
+        |> put_if_present("description", description)
       }
     }
   end
@@ -166,4 +167,7 @@ defmodule Rollbax.Item do
       "version" => unquote(Mix.Project.config()[:version])
     }
   end
+
+  defp put_if_present(map, _field, nil), do: map
+  defp put_if_present(map, field, value), do: Map.put(map, field, value)
 end
