@@ -283,16 +283,32 @@ defmodule Rollbax.LoggerTest do
   end
 
   test "task with undefined mfa" do
-    defmodule Test.UndefinedMFA do
+    defmodule Test.Undef do
       def func(_arg), do: nil
     end
 
     capture_log(fn ->
-      {:ok, task} = Task.start(Test.UndefinedMFA, :func, [])
+      {:ok, task} = Task.start(Elixir.UndefinedMFA, :func, [])
+
       data = assert_performed_request()["data"]
+
+      assert data["body"]["trace"]["exception"] == %{
+               "class" => "Crash report (:undef)",
+               "message" => ":undef"
+             }
+
+      assert find_frames_for_current_file(data["body"]["trace"]["frames"]) == []
+
+      assert data["custom"] == %{
+               "name" => inspect(task),
+               "function" => "&UndefinedMFA.func/0",
+               "arguments" => "[]",
+               "started_from" => inspect(self()),
+               "crash_report" => ":undef"
+             }
     end)
   after
-    purge_module(Test.UndefinedMFA)
+    purge_module(UndefinedMFA)
   end
 
   if List.to_integer(:erlang.system_info(:otp_release)) < 19 do
