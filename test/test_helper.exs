@@ -18,13 +18,16 @@ defmodule ExUnit.RollbaxCase do
         api_endpoint \\ "http://localhost:4004",
         proxy \\ nil
       ) do
-    Rollbax.Client.start_link(
-      api_endpoint: api_endpoint,
-      access_token: token,
-      environment: env,
-      enabled: true,
-      custom: custom,
-      proxy: proxy
+    start_supervised(
+      {Rollbax.Client,
+       [
+         api_endpoint: api_endpoint,
+         access_token: token,
+         environment: env,
+         enabled: true,
+         custom: custom,
+         proxy: proxy
+       ]}
     )
   end
 
