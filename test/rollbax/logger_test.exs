@@ -32,8 +32,9 @@ defmodule Rollbax.LoggerTest do
 
       def init(args), do: {:ok, args}
 
-      def handle_cast(:raise_elixir, _state) do
-        Map.fetch!(Map.new(), :nonexistent_key)
+      def handle_cast(:raise_elixir, state) do
+        :ok = Map.fetch!(Map.new(), :nonexistent_key)
+        {:noreply, state}
       end
     end
 
@@ -236,7 +237,7 @@ defmodule Rollbax.LoggerTest do
       data = assert_performed_request()["data"]
 
       assert data["body"]["trace"]["exception"] == %{
-               "class" => "Task terminating (RuntimeError)",
+               "class" => "Crash report (RuntimeError)",
                "message" => "oops"
              }
 
@@ -246,7 +247,7 @@ defmodule Rollbax.LoggerTest do
                ~r[anonymous fn/0 in Rollbax.LoggerTest.(\")?test task with anonymous function raising an error(\")?/1]
 
       assert data["custom"]["name"] == inspect(task)
-      assert data["custom"]["function"] =~ ~r/\A#Function<.* in Rollbax\.LoggerTest/
+      assert data["custom"]["function"] =~ ~r/Rollbax\.LoggerTest/
       assert data["custom"]["arguments"] == "[]"
     end)
   end
@@ -262,7 +263,7 @@ defmodule Rollbax.LoggerTest do
       data = assert_performed_request()["data"]
 
       assert data["body"]["trace"]["exception"] == %{
-               "class" => "Task terminating (RuntimeError)",
+               "class" => "Crash report (RuntimeError)",
                "message" => "my message"
              }
 
@@ -272,8 +273,9 @@ defmodule Rollbax.LoggerTest do
       assert data["custom"] == %{
                "name" => inspect(task),
                "function" => "&MyModule.raise_error/1",
-               "arguments" => ~s(["my message"]),
-               "started_from" => inspect(self())
+               "arguments" => "[:Argument__1]",
+               "started_from" => inspect(self()),
+               "crash_report" => ""
              }
     end)
   after
