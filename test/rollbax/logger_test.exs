@@ -282,6 +282,19 @@ defmodule Rollbax.LoggerTest do
     purge_module(MyModule)
   end
 
+  test "task with undefined mfa" do
+    defmodule Test.UndefinedMFA do
+      def func(_arg), do: nil
+    end
+
+    capture_log(fn ->
+      {:ok, task} = Task.start(Test.UndefinedMFA, :func, [])
+      data = assert_performed_request()["data"]
+    end)
+  after
+    purge_module(Test.UndefinedMFA)
+  end
+
   if List.to_integer(:erlang.system_info(:otp_release)) < 19 do
     test "gen_fsm terminating" do
       defmodule Elixir.MyGenFsm do
